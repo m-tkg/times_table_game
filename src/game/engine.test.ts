@@ -79,6 +79,16 @@ describe('タイムアタック', () => {
     expect(s.correctCount).toBe(1);
   });
 
+  it('結果の正答数は一発で正解した問題だけを数える（正答率の表示に使う）', () => {
+    let s = start(normal());
+    for (let i = 0; i < 20; i++) {
+      if (i === 0) s = answer(s, wrongAnswer(s), 500);
+      s = answer(s, rightAnswer(s), (i + 1) * 1000);
+    }
+    expect(s.phase).toBe('finished');
+    expect(summaryOf(s)).toEqual({ correctCount: 19, answeredCount: 20, totalMs: 20_000 + 3000 });
+  });
+
   it('4 択モードの誤答は +3 秒して正答を表示し、表示中はタイマーが止まる', () => {
     let s = start(normal({ method: 'choice' }));
     s = answer(s, wrongAnswer(s), 1000);
