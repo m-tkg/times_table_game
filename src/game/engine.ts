@@ -109,7 +109,9 @@ export function summaryOf(state: GameState): ScoreSummary {
     : isRule(state, 'timed60')
       ? Math.min(clock, TIMED60_MS)
       : clock;
-  return { correctCount: state.correctCount, answeredCount: state.answeredCount, totalMs };
+  // 正答数は一発で正解した問題だけ（タイムアタック入力のやり直しで正解した問題は含めない）
+  const correctCount = state.records.filter((r) => r.correct).length;
+  return { correctCount, answeredCount: state.answeredCount, totalMs };
 }
 
 /** ベスト記録・プレイ記録に残すか（通常・デイリーで、最後まで遊んだもの） */

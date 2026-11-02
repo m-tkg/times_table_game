@@ -454,6 +454,7 @@ a {
 
 .slot {
   display: inline-block;
+  line-height: 1.05;
   min-width: 1.6em;
   padding: 0 0.1em;
   border-bottom: 6px solid var(--muted);

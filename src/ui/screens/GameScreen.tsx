@@ -30,8 +30,15 @@ function GameView({ config }: { config: GameConfig }) {
     createGame(c, { seed: randomSeed(), now: performance.now(), playId: newPlayId() }),
   );
   const [now, setNow] = useState(() => performance.now());
-  const [slots, setSlots] = useState<[string, string]>(['', '']);
-  const [activeSlot, setActiveSlot] = useState<0 | 1>(0);
+  // 入力中の値。素早いキー入力でも最新の値で判定できるよう ref にも持つ
+  const inputRef = useRef<InputState>(EMPTY_INPUT);
+  const [input, setInputState] = useState<InputState>(EMPTY_INPUT);
+  const setInput = useCallback((next: InputState) => {
+    inputRef.current = next;
+    setInputState(next);
+  }, []);
+  const { slots, active: activeSlot } = input;
+  const setActiveSlot = useCallback((active: 0 | 1) => setInput({ ...inputRef.current, active }), [setInput]);
   const finishedRef = useRef(false);
 
   // 時計: 表示の更新と、時間切れ・正答表示の終了の判定
@@ -70,9 +77,8 @@ function GameView({ config }: { config: GameConfig }) {
 
   // 問題が変わったら入力を消す
   useEffect(() => {
-    setSlots(['', '']);
-    setActiveSlot(0);
-  }, [state.questionNumber]);
+    setInput(EMPTY_INPUT);
+  }, [state.questionNumber, setInput]);
 
   // 正誤の演出に合わせて効果音・振動。誤答（タイムアタック入力）なら入力を消す
   const lastFlash = useRef(0);
@@ -80,15 +86,12 @@ function GameView({ config }: { config: GameConfig }) {
     const flash = state.flash;
     if (!flash || flash.id === lastFlash.current) return;
     lastFlash.current = flash.id;
-    if (flash.kind === 'wrong') {
-      setSlots(['', '']);
-      setActiveSlot(0);
-    }
+    if (flash.kind === 'wrong') setInput(EMPTY_INPUT);
     if (appSettings.sound) {
       playSound(flash.kind === 'correct' && state.streak > 0 && state.streak % 5 === 0 ? 'combo' : flash.kind);
     }
     if (appSettings.vibration) vibrate(flash.kind);
-  }, [state.flash, state.streak, appSettings.sound, appSettings.vibration]);
+  }, [state.flash, state.streak, appSettings.sound, appSettings.vibration, setInput]);
 
   const submitAnswer = useCallback((answer: Answer) => {
     dispatch({ type: 'answer', answer, now: performance.now(), at: Date.now() });
@@ -99,46 +102,47 @@ function GameView({ config }: { config: GameConfig }) {
 
   const pressDigit = useCallback(
     (d: string) => {
-      setSlots((prev) => {
-        const next: [string, string] = [...prev];
-        const current = next[activeSlot];
-        if (current.length >= MAX_DIGITS) return prev;
-        next[activeSlot] = current === '0' ? d : current + d;
-        return next;
-      });
+      const { slots, active } = inputRef.current;
+      const current = slots[active];
+      if (current.length >= MAX_DIGITS) return;
+      const next: [string, string] = [...slots];
+      next[active] = current === '0' ? d : current + d;
+      setInput({ slots: next, active });
     },
-    [activeSlot],
+    [setInput],
   );
 
   const pressDelete = useCallback(() => {
+    const { slots, active } = inputRef.current;
     // 右の欄が空なら左の欄に戻る
-    if (slots[activeSlot] === '' && activeSlot === 1) {
-      setActiveSlot(0);
+    if (slots[active] === '' && active === 1) {
+      setInput({ slots, active: 0 });
       return;
     }
-    setSlots((prev) => {
-      const next: [string, string] = [...prev];
-      next[activeSlot] = next[activeSlot].slice(0, -1);
-      return next;
-    });
-  }, [activeSlot, slots]);
+    const next: [string, string] = [...slots];
+    next[active] = next[active].slice(0, -1);
+    setInput({ slots: next, active });
+  }, [setInput]);
 
   const switchSlot = useCallback(() => {
-    if (isFactor) setActiveSlot((s) => (s === 0 ? 1 : 0));
-  }, [isFactor]);
+    if (!isFactor) return;
+    const { slots, active } = inputRef.current;
+    setInput({ slots, active: active === 0 ? 1 : 0 });
+  }, [isFactor, setInput]);
 
   const pressSubmit = useCallback(() => {
+    const { slots } = inputRef.current;
     if (isFactor) {
       if (slots[0] === '') return;
       if (slots[1] === '') {
-        setActiveSlot(1);
+        setInput({ slots, active: 1 });
         return;
       }
       submitAnswer([Number(slots[0]), Number(slots[1])]);
     } else if (slots[0] !== '') {
       submitAnswer(Number(slots[0]));
     }
-  }, [isFactor, slots, submitAnswer]);
+  }, [isFactor, setInput, submitAnswer]);
 
   const togglePause = useCallback(() => {
     const n = performance.now();
@@ -252,6 +256,13 @@ function GameView({ config }: { config: GameConfig }) {
     </main>
   );
 }
+
+interface InputState {
+  slots: [string, string];
+  active: 0 | 1;
+}
+
+const EMPTY_INPUT: InputState = { slots: ['', ''], active: 0 };
 
 function sameAnswer(a: Answer, b: Answer): boolean {
   if (typeof a === 'number' || typeof b === 'number') return a === b;

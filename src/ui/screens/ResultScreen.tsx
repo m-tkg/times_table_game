@@ -116,9 +116,14 @@ export function ResultScreen() {
         <div className="card">
           <h2>🏅 実績獲得</h2>
           {newAchievements.map((a) => (
-            <div key={a.id} className="list-row">
-              <span>{a.title}</span>
-              <small className="muted">{a.description}</small>
+            <div key={a.id} className="achievement got">
+              <span className="medal" aria-hidden>
+                🏅
+              </span>
+              <span>
+                <b>{a.title}</b>
+                <small>{a.description}</small>
+              </span>
             </div>
           ))}
         </div>
