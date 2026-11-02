@@ -1252,3 +1252,115 @@ button.list-row {
 .table-question .hint-btn .label {
   display: none;
 }
+
+/* 九九表（暗記用） */
+.table-grid.chart .head,
+.table-grid.chart .corner,
+.table-grid.chart .cell {
+  aspect-ratio: 1;
+}
+
+.table-grid.chart .cell {
+  position: relative;
+  color: var(--text);
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+}
+
+.table-grid.chart .cell.line {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+}
+
+.table-grid.chart .cell.selected {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.table-grid.chart .head.on {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--accent-ink);
+}
+
+.chart-bubble {
+  left: 50%;
+  right: auto;
+  translate: -50% 0;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.chart-bubble::before {
+  right: auto;
+  left: calc(50% - 6px);
+}
+
+.chart-bubble.left {
+  left: 0;
+  translate: none;
+}
+
+.chart-bubble.left::before {
+  left: 10px;
+}
+
+.chart-bubble.right {
+  left: auto;
+  right: 0;
+  translate: none;
+}
+
+.chart-bubble.right::before {
+  left: auto;
+  right: 10px;
+}
+
+.chart-bubble.up {
+  top: auto;
+  bottom: calc(100% + 10px);
+}
+
+.chart-bubble.up::before {
+  top: auto;
+  bottom: -6px;
+  border-bottom: 0;
+  border-top: 6px solid var(--text);
+}
+
+/* 19 × 19 は横にもスクロールし、見出しの行・列は固定する */
+.chart-scroll.big {
+  overflow: auto;
+  max-height: calc(100dvh - 210px);
+  border-radius: 12px;
+}
+
+.table-grid.chart.big {
+  width: 720px;
+  max-width: none;
+  font-size: 13px;
+}
+
+.table-grid.chart.big .head,
+.table-grid.chart.big .corner {
+  position: sticky;
+  background: var(--bg);
+  z-index: 1;
+}
+
+.table-grid.chart.big .head.col {
+  top: 0;
+}
+
+.table-grid.chart.big .head.row {
+  left: 0;
+}
+
+.table-grid.chart.big .corner {
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+
+.table-grid.chart.big .head.on {
+  background: color-mix(in srgb, var(--accent) 40%, var(--bg));
+}

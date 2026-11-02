@@ -102,6 +102,13 @@ export function HomeScreen() {
           練習
           <small>段を選んで</small>
         </Link>
+        <Link to="/chart" className="tile">
+          <div className="ico" style={{ background: 'var(--primary-shadow)' }}>
+            九
+          </div>
+          九九表
+          <small>見て覚える</small>
+        </Link>
         <Link to="/stats" className="tile">
           <div className="ico" style={{ background: 'var(--accent)' }}>
             ▤

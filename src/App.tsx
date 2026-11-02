@@ -1,6 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router';
 import { AppProvider } from './app/AppContext.tsx';
 import { AchievementsScreen } from './ui/screens/AchievementsScreen.tsx';
+import { ChartScreen } from './ui/screens/ChartScreen.tsx';
 import { GameScreen } from './ui/screens/GameScreen.tsx';
 import { HomeScreen } from './ui/screens/HomeScreen.tsx';
 import { PracticeScreen } from './ui/screens/PracticeScreen.tsx';
@@ -26,6 +27,7 @@ export function App() {
             <Route path="/weakness" element={<WeaknessScreen />} />
             <Route path="/practice" element={<PracticeScreen />} />
             <Route path="/table" element={<TableSetupScreen />} />
+            <Route path="/chart" element={<ChartScreen />} />
             <Route path="/stats" element={<StatsScreen />} />
             <Route path="/achievements" element={<AchievementsScreen />} />
             <Route path="/settings" element={<SettingsScreen />} />
