@@ -8,7 +8,7 @@ import { correctAnswerText, judge } from '../../domain/question.ts';
 import { randomSeed } from '../../domain/rng.ts';
 import { SURVIVAL_LIVES, TIMED60_MS } from '../../domain/score.ts';
 import type { Answer, Question } from '../../domain/types.ts';
-import { autoSubmitAnswer, shouldMoveToRight } from '../../game/autoSubmit.ts';
+import { shouldMoveToRight } from '../../game/factorInput.ts';
 import { createGame, gameClockMs, gameReducer, questionRemainingMs, timeRemainingMs, totalQuestions } from '../../game/engine.ts';
 import type { GameConfig, GameState } from '../../game/types.ts';
 
@@ -94,7 +94,7 @@ function GameView({ config }: { config: GameConfig }) {
     if (appSettings.vibration) vibrate(flash.kind);
   }, [state.flash, state.streak, appSettings.sound, appSettings.vibration, setInput]);
 
-  // 素早い入力でも、いま表示中の問題で自動判定できるよう ref にも持つ
+  // 素早い入力でも、いま表示中の問題で判断できるよう ref にも持つ
   const questionRef = useRef({ question: state.question, difficulty: state.questionDifficulty });
   questionRef.current = { question: state.question, difficulty: state.questionDifficulty };
 
@@ -116,21 +116,12 @@ function GameView({ config }: { config: GameConfig }) {
       if (current.length >= MAX_DIGITS) return;
       const next: [string, string] = [...slots];
       next[active] = current === '0' ? d : current + d;
-      if (!appSettings.autoSubmit) {
-        setInput({ slots: next, active });
-        return;
-      }
       const { question, difficulty } = questionRef.current;
-      const answer = autoSubmitAnswer(question, difficulty, next);
-      if (answer !== null) {
-        submitAnswer(answer);
-        return;
-      }
-      // 逆算: 左の欄を打ち終えたら右の欄へ（右が空のときだけ）
+      // 逆算: 左の欄を打ち終えたら右の欄へ（右が空のときだけ）。判定は決定キーで行う
       const moveRight = question.kind === 'factor' && active === 0 && next[1] === '' && shouldMoveToRight(difficulty, next[0]);
       setInput({ slots: next, active: moveRight ? 1 : active });
     },
-    [setInput, appSettings.autoSubmit, submitAnswer],
+    [setInput],
   );
 
   const pressDelete = useCallback(() => {

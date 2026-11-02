@@ -14,11 +14,9 @@ export interface AppSettings {
   sound: boolean;
   vibration: boolean;
   theme: ThemeSetting;
-  /** 正答の桁数まで入力したら決定キーなしで判定する */
-  autoSubmit: boolean;
 }
 
-export const DEFAULT_APP_SETTINGS: AppSettings = { sound: false, vibration: false, theme: 'system', autoSubmit: true };
+export const DEFAULT_APP_SETTINGS: AppSettings = { sound: false, vibration: false, theme: 'system' };
 
 export interface PracticeSettings {
   tables: number[];
@@ -90,7 +88,13 @@ export class Repository {
 
   loadAppSettings(): AppSettings {
     const v = this.read<Partial<AppSettings>>(KEYS.settings, {});
-    return { ...DEFAULT_APP_SETTINGS, ...(isObject(v) ? v : {}) };
+    const saved = isObject(v) ? (v as Partial<AppSettings>) : {};
+    // 知っている項目だけを読む（以前の版の項目が残っていても無視する）
+    return {
+      sound: saved.sound ?? DEFAULT_APP_SETTINGS.sound,
+      vibration: saved.vibration ?? DEFAULT_APP_SETTINGS.vibration,
+      theme: saved.theme ?? DEFAULT_APP_SETTINGS.theme,
+    };
   }
 
   loadLastSettings(): NormalSettings | null {
