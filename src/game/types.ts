@@ -11,7 +11,7 @@ export type GameConfig =
   /** keys は苦手度で選んだ組み合わせ（cellKey）を出題順に並べたもの */
   | { mode: 'weakness'; difficulty: Difficulty; method: AnswerMethod; keys: string[] }
   /** 表うめ: 九九表の空きマスをランダムな順に埋める */
-  | { mode: 'table'; difficulty: Difficulty; count: TableCount }
+  | { mode: 'table'; difficulty: Difficulty; count: TableCount; method: AnswerMethod }
   | {
       mode: 'practice';
       tables: number[];

@@ -414,7 +414,12 @@ describe('1 問ごとの記録', () => {
 });
 
 describe('表うめモード', () => {
-  const table = (difficulty: 'standard' | 'advanced' | 'expert', count: 20 | 'all'): GameConfig => ({ mode: 'table', difficulty, count });
+  const table = (difficulty: 'standard' | 'advanced' | 'expert', count: 20 | 'all', method: 'input' | 'choice' = 'input'): GameConfig => ({
+    mode: 'table',
+    difficulty,
+    count,
+    method,
+  });
   const keyOf = (s: GameState) => {
     const q = s.question as { a: number; b: number };
     return `${q.a}x${q.b}`;
@@ -491,8 +496,47 @@ describe('表うめモード', () => {
     expect(s.records[0]?.mode).toBe('table');
   });
 
-  it('表示用の設定はタイムアタック・答えを出す・入力', () => {
-    const s = start(table('expert', 20));
-    expect(s.settings).toEqual({ rule: 'timeAttack', format: 'product', method: 'input', difficulty: 'expert' });
+  it('表示用の設定はタイムアタック・答えを出す・選んだ回答方法', () => {
+    expect(start(table('expert', 20)).settings).toEqual({ rule: 'timeAttack', format: 'product', method: 'input', difficulty: 'expert' });
+    expect(start(table('expert', 20, 'choice')).settings).toEqual({ rule: 'timeAttack', format: 'product', method: 'choice', difficulty: 'expert' });
+  });
+
+  it('4 択: 選択肢を 4 つ持ち、正解はそのマスの答え', () => {
+    const s = start(table('standard', 20, 'choice'));
+    expect(s.choices).toHaveLength(4);
+    const q = s.question as { a: number; b: number };
+    expect(s.choices).toContain(q.a * q.b);
+  });
+
+  it('4 択: 誤答は +3 秒、正答を 1.5 秒見せてから次のマスへ進み、そのマスは一度間違えた扱いで埋まる', () => {
+    let s = start(table('standard', 20, 'choice'));
+    const first = keyOf(s);
+    s = answer(s, wrongAnswer(s), 1000);
+    expect(s.phase).toBe('feedback');
+    expect(s.feedback?.correct).toBe(false);
+    expect(s.penaltyMs).toBe(3000);
+    expect(s.records[0]).toMatchObject({ correct: false });
+    s = tick(s, 2500);
+    expect(s.phase).toBe('playing');
+    expect(s.questionNumber).toBe(2);
+    expect(keyOf(s)).not.toBe(first);
+  });
+
+  it('4 択: 誤答があっても全マスで終わる', () => {
+    let s = start(table('standard', 20, 'choice'));
+    let now = 0;
+    for (let i = 0; i < 20; i++) {
+      now += 1000;
+      if (i === 0) {
+        s = answer(s, wrongAnswer(s), now);
+        now += 1500;
+      } else {
+        s = answer(s, rightAnswer(s), now);
+        now += TABLE_CORRECT_FEEDBACK_MS;
+      }
+      s = tick(s, now);
+    }
+    expect(s.phase).toBe('finished');
+    expect(summaryOf(s)).toEqual({ correctCount: 19, answeredCount: 20, totalMs: 20_000 + 3000 });
   });
 });

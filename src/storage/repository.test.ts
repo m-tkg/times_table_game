@@ -106,15 +106,17 @@ describe('Repository', () => {
       expect(repo.loadBests()['timeAttack/product/input/standard']?.id).toBe('c');
     });
 
-    it('表うめのベスト記録は「難易度 × マス数」ごとに分かれ、通常モードとは別', () => {
-      const tablePlay = (id: string, count: 20 | 'all', score: number) =>
-        play({ id, mode: 'table', tableCount: count, totalMs: score, score });
+    it('表うめのベスト記録は「難易度 × マス数 × 回答方法」ごとに分かれ、通常モードとは別', () => {
+      const tablePlay = (id: string, count: 20 | 'all', method: 'input' | 'choice', score: number) =>
+        play({ id, mode: 'table', tableCount: count, settings: { rule: 'timeAttack', format: 'product', method, difficulty: 'standard' }, totalMs: score, score });
       repo.saveGameResult({ records: [], play: play() });
-      expect(repo.saveGameResult({ records: [], play: tablePlay('t1', 20, 50_000) }).isNewBest).toBe(true);
-      expect(repo.saveGameResult({ records: [], play: tablePlay('t2', 'all', 90_000) }).isNewBest).toBe(true);
+      expect(repo.saveGameResult({ records: [], play: tablePlay('t1', 20, 'input', 50_000) }).isNewBest).toBe(true);
+      expect(repo.saveGameResult({ records: [], play: tablePlay('t2', 'all', 'input', 90_000) }).isNewBest).toBe(true);
+      expect(repo.saveGameResult({ records: [], play: tablePlay('t3', 20, 'choice', 60_000) }).isNewBest).toBe(true);
       const bests = repo.loadBests();
-      expect(bests['table/standard/20']?.id).toBe('t1');
-      expect(bests['table/standard/all']?.id).toBe('t2');
+      expect(bests['table/standard/20/input']?.id).toBe('t1');
+      expect(bests['table/standard/all/input']?.id).toBe('t2');
+      expect(bests['table/standard/20/choice']?.id).toBe('t3');
       expect(bests['timeAttack/product/input/standard']?.id).toBe('p1');
     });
 
@@ -166,8 +168,13 @@ describe('Repository', () => {
 
   it('表うめの前回の設定を保存して読み戻せる', () => {
     expect(repo.loadTableSettings()).toBeNull();
-    repo.saveTableSettings({ difficulty: 'advanced', count: 'all' });
-    expect(new Repository(store).loadTableSettings()).toEqual({ difficulty: 'advanced', count: 'all' });
+    repo.saveTableSettings({ difficulty: 'advanced', count: 'all', method: 'choice' });
+    expect(new Repository(store).loadTableSettings()).toEqual({ difficulty: 'advanced', count: 'all', method: 'choice' });
+  });
+
+  it('回答方法のない表うめの設定（以前の保存形式）は入力として読む', () => {
+    store.setItem('kuku:table', JSON.stringify({ difficulty: 'expert', count: 20 }));
+    expect(repo.loadTableSettings()).toEqual({ difficulty: 'expert', count: 20, method: 'input' });
   });
 
   it('カウンタを加算して読み戻せる（苦手克服の完了回数など）', () => {

@@ -61,7 +61,7 @@ describe('finishGame', () => {
 
   it('表うめはマス数つきで記録し、タイムアタック用の実績は獲得しない', () => {
     const repo = new Repository(createMemoryStore());
-    let s = createGame({ mode: 'table', difficulty: 'standard', count: 20 }, { seed: 1, now: 0, playId: 't' });
+    let s = createGame({ mode: 'table', difficulty: 'standard', count: 20, method: 'input' }, { seed: 1, now: 0, playId: 't' });
     for (let i = 0; i < 20; i++) {
       const c = correctAnswerOf(s.question, s.questionDifficulty);
       const now = i * 2000 + 1000;
