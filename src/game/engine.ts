@@ -15,7 +15,10 @@ import {
 import type { Answer, Difficulty, Question, Rng } from '../domain/types.ts';
 import type { GameAction, GameConfig, GameState } from './types.ts';
 
+/** 誤答・時間切れの正答表示の長さ */
 export const FEEDBACK_MS = 1500;
+/** 正解演出の長さ（入力した値が合っていたのを目で確認できるように） */
+export const CORRECT_FEEDBACK_MS = 1000;
 
 interface CreateOptions {
   seed: number;
@@ -257,14 +260,23 @@ function advance(state: GameState, now: number): GameState {
   };
 }
 
-/** 誤答・時間切れの正答表示に入る（時計を止める） */
-function enterFeedback(state: GameState, now: number, answer: Answer | null, outOfRange: boolean, timeout: boolean): GameState {
+/** 正解演出・誤答や時間切れの正答表示に入る（時計を止める） */
+function enterFeedback(
+  state: GameState,
+  now: number,
+  answer: Answer | null,
+  outOfRange: boolean,
+  timeout: boolean,
+  correct = false,
+): GameState {
+  const duration = correct ? CORRECT_FEEDBACK_MS : FEEDBACK_MS;
   return {
     ...state,
     phase: 'feedback',
     feedback: {
-      until: now + FEEDBACK_MS,
-      remainingMs: FEEDBACK_MS,
+      until: now + duration,
+      remainingMs: duration,
+      correct,
       answer,
       outOfRange,
       timeout,
@@ -300,8 +312,9 @@ function onAnswer(state: GameState, answer: Answer, now: number, at: number): Ga
       records: [...state.records, record],
       wrongRecords: firstTry ? state.wrongRecords : [...state.wrongRecords, record],
       flash: nextFlash(state, 'correct'),
+      ...stopClock(state, now),
     };
-    return advance(next, now);
+    return enterFeedback(next, now, answer, false, false, true);
   }
 
   if (timeAttackInput) {

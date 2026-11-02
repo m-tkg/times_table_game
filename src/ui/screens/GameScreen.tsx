@@ -208,6 +208,13 @@ function GameView({ config }: { config: GameConfig }) {
   }, [playing, state.choices, pressDigit, pressDelete, pressSubmit, switchSlot, submitAnswer, togglePause]);
 
   const quit = () => dispatch({ type: 'quit', now: performance.now() });
+  // 正解演出中は、入力した値をそのまま（緑で）見せる
+  const correctSlots: [string, string] | null =
+    state.phase === 'feedback' && state.feedback?.correct && state.feedback.answer !== null
+      ? typeof state.feedback.answer === 'number'
+        ? [String(state.feedback.answer), '']
+        : [String(state.feedback.answer[0]), String(state.feedback.answer[1])]
+      : null;
   const endless = config.mode === 'practice' && config.count === null;
 
   return (
@@ -225,7 +232,13 @@ function GameView({ config }: { config: GameConfig }) {
               key={state.flash?.id ?? 0}
               className={`question num ${state.flash ? (state.flash.kind === 'correct' ? 'flash-correct' : 'flash-wrong') : ''}`}
             >
-              <QuestionView question={state.question} slots={state.choices ? null : slots} activeSlot={activeSlot} onSlot={setActiveSlot} />
+              <QuestionView
+                question={state.question}
+                slots={state.choices ? null : correctSlots ?? slots}
+                activeSlot={activeSlot}
+                onSlot={setActiveSlot}
+                correct={correctSlots !== null}
+              />
             </div>
             {state.streak >= 3 && <div className="combo num">COMBO ×{state.streak}</div>}
           </div>
@@ -330,7 +343,7 @@ function Hud({ state, now, onPause, onEnd }: { state: GameState; now: number; on
         <span className="num muted">{formatSeconds(state.survivalLimitMs)}s</span>
       </>
     );
-    progress = state.phase === 'playing' ? remaining / state.survivalLimitMs : 0;
+    progress = remaining / state.survivalLimitMs;
     warn = progress < 0.3;
   } else {
     center = (
@@ -366,9 +379,13 @@ function Hud({ state, now, onPause, onEnd }: { state: GameState; now: number; on
   );
 }
 
-function Slot({ value, active, onClick }: { value: string; active: boolean; onClick?: () => void }) {
+function Slot({ value, active, correct, onClick }: { value: string; active: boolean; correct?: boolean; onClick?: () => void }) {
   return (
-    <span className={`slot ${active ? 'active' : ''} ${value === '' ? 'empty' : ''}`} onClick={onClick} role={onClick ? 'button' : undefined}>
+    <span
+      className={`slot ${correct ? 'correct' : active ? 'active' : ''} ${value === '' ? 'empty' : ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+    >
       {value === '' ? '?' : value}
     </span>
   );
@@ -379,13 +396,20 @@ function QuestionView({
   slots,
   activeSlot,
   onSlot,
+  correct = false,
 }: {
   question: Question;
   slots: [string, string] | null;
   activeSlot: 0 | 1;
   onSlot(s: 0 | 1): void;
+  correct?: boolean;
 }) {
-  const slot = (i: 0 | 1) => (slots ? <Slot value={slots[i]} active={activeSlot === i} onClick={() => onSlot(i)} /> : <span className="slot empty">?</span>);
+  const slot = (i: 0 | 1) =>
+    slots ? (
+      <Slot value={slots[i]} active={!correct && activeSlot === i} correct={correct} onClick={correct ? undefined : () => onSlot(i)} />
+    ) : (
+      <span className="slot empty">?</span>
+    );
   switch (question.kind) {
     case 'product':
       return (
@@ -415,6 +439,16 @@ function QuestionView({
 function FeedbackBanner({ state }: { state: GameState }) {
   const fb = state.feedback;
   if (!fb) return null;
+  if (fb.correct) {
+    return (
+      <div className="feedback ok" role="status">
+        <span className="mark" aria-hidden>
+          ✓
+        </span>
+        <div>正解！</div>
+      </div>
+    );
+  }
   return (
     <div className="feedback" role="status">
       <span className="mark" aria-hidden>

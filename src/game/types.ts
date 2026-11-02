@@ -27,6 +27,8 @@ export interface Feedback {
   until: number;
   /** 一時停止したときの残り表示時間 */
   remainingMs: number;
+  /** 正解演出なら true、誤答・時間切れの正答表示なら false */
+  correct: boolean;
   answer: Answer | null;
   outOfRange: boolean;
   timeout: boolean;

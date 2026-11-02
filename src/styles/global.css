@@ -465,6 +465,11 @@ a {
   border-bottom-color: var(--primary);
 }
 
+.slot.correct {
+  color: var(--correct);
+  border-bottom-color: var(--correct);
+}
+
 .slot.empty {
   color: var(--muted);
 }
@@ -543,6 +548,14 @@ a {
   color: #fff;
   display: grid;
   place-items: center;
+}
+
+.feedback.ok {
+  background: color-mix(in srgb, var(--correct) 18%, var(--surface));
+}
+
+.feedback.ok .mark {
+  background: var(--correct);
 }
 
 .feedback small {
