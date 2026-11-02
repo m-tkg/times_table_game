@@ -1,14 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { useApp } from '../../app/AppContext.tsx';
-import { DIFFICULTY_HINT, formatDate, formatPercent, formatScore, formatSeconds, settingsLabel } from '../../app/labels.ts';
+import { DIFFICULTY_HINT, formatDate, formatPercent, formatScore, formatSeconds, playLabel } from '../../app/labels.ts';
 import { ACHIEVEMENTS } from '../../domain/achievements.ts';
 import { answerText, correctAnswerOf, correctAnswerText, questionText } from '../../domain/question.ts';
 import { cellKey, heatmapAxes } from '../../domain/range.ts';
-import { DEFAULT_SETTINGS, settingsKey, type NormalSettings, type PlayRecord } from '../../domain/records.ts';
+import { DEFAULT_SETTINGS, settingsKey, type NormalSettings, type PlayRecord, type TableCount } from '../../domain/records.ts';
 import { accuracyOf, compareResults } from '../../domain/score.ts';
 import { combinedCellStats, localDateKey, streakDays, type CellStats } from '../../domain/stats.ts';
 import type { Difficulty, Rule } from '../../domain/types.ts';
-import { bestKeyOf } from '../../storage/repository.ts';
+import { bestKeyOf, tableBestKey } from '../../storage/repository.ts';
 import { Segmented } from '../Segmented.tsx';
 import { TopBar } from '../TopBar.tsx';
 import { DIFFICULTY_OPTIONS, FORMAT_OPTIONS, METHOD_OPTIONS, RULE_OPTIONS } from './SetupScreen.tsx';
@@ -86,10 +86,64 @@ function scoreText(rule: Rule, score: number): string {
   return `${s.value} ${s.unit}`;
 }
 
+type Target = { kind: 'normal'; settings: NormalSettings } | { kind: 'daily' } | { kind: 'table'; difficulty: Difficulty; count: TableCount };
+
+function targetKey(t: Target): string {
+  if (t.kind === 'daily') return 'daily';
+  if (t.kind === 'table') return tableBestKey(t.difficulty, t.count);
+  return settingsKey(t.settings);
+}
+
+function targetRule(t: Target): Rule {
+  return t.kind === 'normal' ? t.settings.rule : 'timeAttack';
+}
+
+/** ベスト・推移で見る対象（通常モードの設定 / デイリー / 表うめ）を選ぶ */
+function TargetFilter({ value, onChange, withDaily }: { value: Target; onChange(t: Target): void; withDaily: boolean }) {
+  const { repo } = useApp();
+  const kinds: Array<{ value: Target['kind']; label: string }> = [
+    { value: 'normal', label: '通常モード' },
+    ...(withDaily ? [{ value: 'daily' as const, label: 'デイリー' }] : []),
+    { value: 'table', label: '表うめ' },
+  ];
+  const switchKind = (kind: Target['kind']) => {
+    if (kind === value.kind) return;
+    if (kind === 'daily') onChange({ kind: 'daily' });
+    else if (kind === 'table') onChange({ kind: 'table', ...(repo.loadTableSettings() ?? { difficulty: 'standard', count: 20 }) });
+    else onChange({ kind: 'normal', settings: repo.loadLastSettings() ?? DEFAULT_SETTINGS });
+  };
+  return (
+    <>
+      <Segmented<Target['kind']> label="対象" value={value.kind} options={kinds} onChange={switchKind} />
+      {value.kind === 'normal' && <SettingsFilter value={value.settings} onChange={(settings) => onChange({ kind: 'normal', settings })} />}
+      {value.kind === 'table' && (
+        <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Segmented<Difficulty> label="難易度" value={value.difficulty} options={DIFFICULTY_OPTIONS} onChange={(difficulty) => onChange({ ...value, difficulty })} />
+          <Segmented<TableCount>
+            label="マス数"
+            value={value.count}
+            options={[
+              { value: 20, label: '20 マス' },
+              { value: 'all', label: '全部' },
+            ]}
+            onChange={(count) => onChange({ ...value, count })}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+function useInitialTarget(): Target {
+  const { repo } = useApp();
+  return { kind: 'normal', settings: repo.loadLastSettings() ?? DEFAULT_SETTINGS };
+}
+
 function Best() {
   const { repo } = useApp();
-  const [filter, setFilter] = useState<NormalSettings>(() => repo.loadLastSettings() ?? DEFAULT_SETTINGS);
-  const key = settingsKey(filter);
+  const [target, setTarget] = useState<Target>(useInitialTarget());
+  const key = targetKey(target);
+  const rule = targetRule(target);
   const best = repo.loadBests()[key];
   const recent = repo
     .loadPlays()
@@ -98,12 +152,12 @@ function Best() {
     .reverse();
   return (
     <>
-      <SettingsFilter value={filter} onChange={setFilter} />
+      <TargetFilter value={target} onChange={setTarget} withDaily={false} />
       <div className="card">
         <h2>ベスト</h2>
         {best ? (
           <div className="list-row num">
-            <b style={{ fontSize: 24 }}>{scoreText(filter.rule, best.score)}</b>
+            <b style={{ fontSize: 24 }}>{scoreText(rule, best.score)}</b>
             <span className="muted">
               正答率 {formatPercent(accuracyOf(best))} ・ {formatDate(best.at)}
             </span>
@@ -119,7 +173,7 @@ function Best() {
         ) : (
           recent.map((p) => (
             <div key={p.id} className="list-row num">
-              <span>{scoreText(filter.rule, p.score)}</span>
+              <span>{scoreText(rule, p.score)}</span>
               <span className="muted">
                 {formatPercent(accuracyOf(p))} ・ {formatDate(p.at)}
               </span>
@@ -133,12 +187,12 @@ function Best() {
 
 function Trend() {
   const { repo } = useApp();
-  const [daily, setDaily] = useState(false);
-  const [filter, setFilter] = useState<NormalSettings>(() => repo.loadLastSettings() ?? DEFAULT_SETTINGS);
-  const rule: Rule = daily ? 'timeAttack' : filter.rule;
+  const [target, setTarget] = useState<Target>(useInitialTarget());
+  const rule = targetRule(target);
+  const key = targetKey(target);
 
   const points = useMemo(() => {
-    const plays = daily ? Object.values(repo.loadDaily()) : repo.loadPlays().filter((p) => p.mode === 'normal' && settingsKey(p.settings) === settingsKey(filter));
+    const plays = target.kind === 'daily' ? Object.values(repo.loadDaily()) : repo.loadPlays().filter((p) => bestKeyOf(p) === key);
     const byDay = new Map<string, PlayRecord>();
     for (const p of plays) {
       const day = p.dailyDate ?? localDateKey(new Date(p.at));
@@ -146,20 +200,11 @@ function Trend() {
       if (!cur || compareResults(rule, p, cur) < 0) byDay.set(day, p);
     }
     return [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([day, p]) => ({ day, score: p.score }));
-  }, [repo, daily, filter, rule]);
+  }, [repo, target.kind, key, rule]);
 
   return (
     <>
-      <Segmented
-        label="対象"
-        value={daily ? 'daily' : 'normal'}
-        options={[
-          { value: 'normal', label: '通常モード' },
-          { value: 'daily', label: 'デイリー' },
-        ]}
-        onChange={(v) => setDaily(v === 'daily')}
-      />
-      {!daily && <SettingsFilter value={filter} onChange={setFilter} />}
+      <TargetFilter value={target} onChange={setTarget} withDaily />
       <div className="card chart">
         <h2>日ごとのベスト{rule === 'timeAttack' ? '（秒・下ほど速い）' : '（問）'}</h2>
         {points.length === 0 ? <div className="empty">まだ記録がありません</div> : <LineChart points={points} rule={rule} />}
@@ -334,7 +379,7 @@ function History() {
               <span>
                 <b>{scoreText(p.settings.rule, p.score)}</b>
                 <small className="muted" style={{ display: 'block', fontSize: 12 }}>
-                  {p.mode === 'daily' ? 'デイリー' : settingsLabel(p.settings)}
+                  {playLabel(p)}
                 </small>
               </span>
               <span className="muted">{formatDate(p.at)}</span>

@@ -8,6 +8,7 @@ import { ResultScreen } from './ui/screens/ResultScreen.tsx';
 import { SettingsScreen } from './ui/screens/SettingsScreen.tsx';
 import { SetupScreen } from './ui/screens/SetupScreen.tsx';
 import { StatsScreen } from './ui/screens/StatsScreen.tsx';
+import { TableSetupScreen } from './ui/screens/TableSetupScreen.tsx';
 import { WeaknessScreen } from './ui/screens/WeaknessScreen.tsx';
 import { UpdatePrompt } from './ui/UpdatePrompt.tsx';
 
@@ -24,6 +25,7 @@ export function App() {
             <Route path="/result" element={<ResultScreen />} />
             <Route path="/weakness" element={<WeaknessScreen />} />
             <Route path="/practice" element={<PracticeScreen />} />
+            <Route path="/table" element={<TableSetupScreen />} />
             <Route path="/stats" element={<StatsScreen />} />
             <Route path="/achievements" element={<AchievementsScreen />} />
             <Route path="/settings" element={<SettingsScreen />} />

@@ -1,6 +1,7 @@
 import { Link, Navigate, useNavigate } from 'react-router';
 import { useApp } from '../../app/AppContext.tsx';
-import { formatPercent, formatScore, formatSeconds, settingsLabel } from '../../app/labels.ts';
+import { formatPercent, formatScore, formatSeconds, settingsLabel, tableLabel } from '../../app/labels.ts';
+import { TableGrid } from '../TableGrid.tsx';
 import { answerText, correctAnswerOf, correctAnswerText, questionText } from '../../domain/question.ts';
 import { accuracyOf } from '../../domain/score.ts';
 import type { PlayRecord } from '../../domain/records.ts';
@@ -34,7 +35,7 @@ export function ResultScreen() {
 
   const { state, summary, play, save, newAchievements } = result;
   const { config, settings } = state;
-  const recordMode = config.mode === 'normal' || config.mode === 'daily';
+  const recordMode = config.mode === 'normal' || config.mode === 'daily' || config.mode === 'table';
   const accuracy = accuracyOf(summary);
 
   const again = () => {
@@ -44,7 +45,15 @@ export function ResultScreen() {
   };
 
   const title =
-    config.mode === 'daily' ? 'デイリーチャレンジ' : config.mode === 'weakness' ? '苦手克服' : config.mode === 'practice' ? '練習' : settingsLabel(settings);
+    config.mode === 'daily'
+      ? 'デイリーチャレンジ'
+      : config.mode === 'weakness'
+        ? '苦手克服'
+        : config.mode === 'practice'
+          ? '練習'
+          : config.mode === 'table'
+            ? tableLabel(config.difficulty, config.count)
+            : settingsLabel(settings);
 
   return (
     <main className="screen">
@@ -126,6 +135,14 @@ export function ResultScreen() {
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {config.mode === 'table' && (
+        <div className="card">
+          <h2>できあがった表</h2>
+          <TableGrid difficulty={config.difficulty} records={state.records} current={null} />
+          <small className="muted">赤い点は一度間違えたマス</small>
         </div>
       )}
 

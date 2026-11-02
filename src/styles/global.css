@@ -966,3 +966,116 @@ button.list-row {
     padding-top: 32px;
   }
 }
+
+/* ===== 表うめ ===== */
+.question-area.table {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 14px 0;
+  min-height: 0;
+}
+
+.question.small {
+  font-size: clamp(26px, 8vw, 36px);
+  text-align: center;
+}
+
+.table-grid {
+  display: grid;
+  gap: 2px;
+  font-weight: 800;
+  font-size: clamp(11px, 3.4vw, 15px);
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.table-grid.wide {
+  font-size: clamp(9px, 2.9vw, 13px);
+}
+
+.table-grid .head,
+.table-grid .corner,
+.table-grid .cell {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  min-width: 0;
+}
+
+.table-grid .head,
+.table-grid .corner {
+  color: var(--muted);
+}
+
+.table-grid .head.on {
+  background: color-mix(in srgb, var(--wrong) 20%, transparent);
+  color: var(--wrong);
+}
+
+.table-grid .cell {
+  background: var(--surface);
+  box-shadow: 0 1px 0 var(--shadow-color);
+}
+
+.table-grid .cell.solved {
+  color: var(--text);
+}
+
+.table-grid .cell.missed {
+  position: relative;
+}
+
+.table-grid .cell.missed::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--wrong);
+}
+
+.table-grid .cell.current {
+  background: var(--wrong);
+  color: #fff;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.table-grid .cell.just {
+  background: var(--correct);
+  color: #fff;
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(0.88);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-grid .cell.current {
+    animation: none;
+  }
+}
+
+.pad.compact {
+  gap: 8px;
+  padding: 10px 14px 16px;
+}
+
+.pad.compact .key {
+  height: 50px;
+  font-size: 22px;
+}
+
+/* カードの中（結果画面）ではマスを背景と区別できる色にする */
+.card .table-grid .cell {
+  background: var(--surface-2);
+  box-shadow: none;
+}

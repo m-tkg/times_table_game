@@ -81,6 +81,13 @@ export function HomeScreen() {
           設定を変えて開始
           <small>ルール・形式・難易度</small>
         </Link>
+        <Link to="/table" className="tile">
+          <div className="ico" style={{ background: 'var(--primary)' }}>
+            ▦
+          </div>
+          表うめ
+          <small>九九表を埋める</small>
+        </Link>
         <Link to="/weakness" className="tile">
           <div className="ico" style={{ background: 'var(--wrong)' }}>
             ◎
@@ -102,18 +109,17 @@ export function HomeScreen() {
           成績
           <small>ベスト・推移・苦手マップ</small>
         </Link>
+        <Link to="/achievements" className="tile">
+          <div className="ico" style={{ background: 'var(--correct)' }}>
+            ★
+          </div>
+          実績
+          <small className="num">
+            {achieved} / {ACHIEVEMENTS.length} 獲得
+          </small>
+        </Link>
       </div>
 
-      <Link to="/achievements" className="card daily">
-        <span style={{ fontSize: 22 }}>🏅</span>
-        <span style={{ flex: 1 }}>
-          <b>実績</b>
-          <span className="muted num" style={{ display: 'block', fontSize: 13 }}>
-            {achieved} / {ACHIEVEMENTS.length} 獲得
-          </span>
-        </span>
-        <span style={{ fontWeight: 900, color: 'var(--primary)' }}>›</span>
-      </Link>
     </main>
   );
 }

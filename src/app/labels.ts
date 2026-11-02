@@ -1,4 +1,4 @@
-import type { NormalSettings } from '../domain/records.ts';
+import type { NormalSettings, PlayRecord, TableCount } from '../domain/records.ts';
 import type { AnswerMethod, Difficulty, FormatSetting, Rule } from '../domain/types.ts';
 
 export const RULE_LABEL: Record<Rule, string> = {
@@ -46,6 +46,17 @@ export const DIFFICULTY_HINT: Record<Difficulty, string> = {
 
 export function settingsLabel(s: NormalSettings): string {
   return [RULE_LABEL[s.rule], FORMAT_LABEL[s.format], METHOD_LABEL[s.method], DIFFICULTY_LABEL[s.difficulty]].join(' ・ ');
+}
+
+export function tableLabel(difficulty: NormalSettings['difficulty'], count: TableCount): string {
+  return `表うめ ・ ${DIFFICULTY_LABEL[difficulty]} ・ ${count === 'all' ? '全部' : `${count} マス`}`;
+}
+
+/** プレイ記録の表示名 */
+export function playLabel(p: PlayRecord): string {
+  if (p.mode === 'daily') return 'デイリー';
+  if (p.mode === 'table') return tableLabel(p.settings.difficulty, p.tableCount ?? 20);
+  return settingsLabel(p.settings);
 }
 
 /** 秒表示（小数 1 桁） */

@@ -9,6 +9,7 @@ import { randomSeed } from '../../domain/rng.ts';
 import { SURVIVAL_LIVES, TIMED60_MS } from '../../domain/score.ts';
 import type { Answer, Question } from '../../domain/types.ts';
 import { shouldMoveToRight } from '../../game/factorInput.ts';
+import { TableGrid } from '../TableGrid.tsx';
 import { createGame, gameClockMs, gameReducer, questionRemainingMs, timeRemainingMs, totalQuestions } from '../../game/engine.ts';
 import type { GameConfig, GameState } from '../../game/types.ts';
 
@@ -207,36 +208,52 @@ function GameView({ config }: { config: GameConfig }) {
         : [String(state.feedback.answer[0]), String(state.feedback.answer[1])]
       : null;
   const endless = config.mode === 'practice' && config.count === null;
+  const isTable = config.mode === 'table';
+  const questionLine = (
+    <div
+      key={state.flash?.id ?? 0}
+      className={`question num ${isTable ? 'small' : ''} ${state.flash ? (state.flash.kind === 'correct' ? 'flash-correct' : 'flash-wrong') : ''}`}
+    >
+      <QuestionView
+        question={state.question}
+        slots={state.choices ? null : correctSlots ?? slots}
+        activeSlot={activeSlot}
+        onSlot={setActiveSlot}
+        correct={correctSlots !== null}
+      />
+    </div>
+  );
 
   return (
     <main className="game">
       <Hud state={state} now={now} onPause={togglePause} onEnd={endless ? quit : undefined} />
 
-      <div className="question-area">
+      <div className={`question-area ${isTable ? 'table' : ''}`}>
         {state.phase === 'paused' ? (
           <div className="muted" style={{ fontWeight: 800 }}>
             一時停止中
           </div>
+        ) : isTable ? (
+          <>
+            <TableGrid
+              difficulty={state.questionDifficulty}
+              records={state.records}
+              current={state.question.kind === 'product' ? [state.question.a, state.question.b] : null}
+              justSolved={correctSlots !== null}
+              justSolvedValue={typeof state.feedback?.answer === 'number' ? state.feedback.answer : null}
+            />
+            {questionLine}
+          </>
         ) : (
           <div>
-            <div
-              key={state.flash?.id ?? 0}
-              className={`question num ${state.flash ? (state.flash.kind === 'correct' ? 'flash-correct' : 'flash-wrong') : ''}`}
-            >
-              <QuestionView
-                question={state.question}
-                slots={state.choices ? null : correctSlots ?? slots}
-                activeSlot={activeSlot}
-                onSlot={setActiveSlot}
-                correct={correctSlots !== null}
-              />
-            </div>
+            {questionLine}
             {state.streak >= 3 && <div className="combo num">COMBO ×{state.streak}</div>}
           </div>
         )}
       </div>
 
-      {state.phase === 'feedback' && state.feedback && <FeedbackBanner state={state} />}
+      {/* 表うめは表のマスが緑になるのでバナーは出さない */}
+      {state.phase === 'feedback' && state.feedback && !isTable && <FeedbackBanner state={state} />}
 
       {state.choices ? (
         <div className="choices">
@@ -259,7 +276,15 @@ function GameView({ config }: { config: GameConfig }) {
           })}
         </div>
       ) : (
-        <Keypad factor={isFactor} disabled={!playing} onDigit={pressDigit} onDelete={pressDelete} onSubmit={pressSubmit} onSwitch={switchSlot} />
+        <Keypad
+          factor={isFactor}
+          compact={isTable}
+          disabled={!playing}
+          onDigit={pressDigit}
+          onDelete={pressDelete}
+          onSubmit={pressSubmit}
+          onSwitch={switchSlot}
+        />
       )}
 
       {state.phase === 'paused' && (
@@ -272,7 +297,7 @@ function GameView({ config }: { config: GameConfig }) {
             <button type="button" className="btn" onClick={quit}>
               {config.mode === 'practice' ? '終了する' : 'やめる'}
             </button>
-            {(config.mode === 'normal' || config.mode === 'daily') && (
+            {(config.mode === 'normal' || config.mode === 'daily' || config.mode === 'table') && (
               <small className="muted">途中でやめたプレイのスコアは記録されません</small>
             )}
           </div>
@@ -296,7 +321,8 @@ function sameAnswer(a: Answer, b: Answer): boolean {
 
 function Hud({ state, now, onPause, onEnd }: { state: GameState; now: number; onPause(): void; onEnd?: () => void }) {
   const { config, settings } = state;
-  const timed = config.mode === 'normal' || config.mode === 'daily';
+  // 表うめはタイムアタックと同じ表示（経過時間・進み具合）
+  const timed = config.mode === 'normal' || config.mode === 'daily' || config.mode === 'table';
   const total = totalQuestions(state);
   let center: ReactNode;
   let progress: number | null = null;
@@ -455,6 +481,7 @@ function FeedbackBanner({ state }: { state: GameState }) {
 
 function Keypad({
   factor,
+  compact = false,
   disabled,
   onDigit,
   onDelete,
@@ -462,6 +489,7 @@ function Keypad({
   onSwitch,
 }: {
   factor: boolean;
+  compact?: boolean;
   disabled: boolean;
   onDigit(d: string): void;
   onDelete(): void;
@@ -474,7 +502,7 @@ function Keypad({
     </button>
   );
   return (
-    <div className="pad">
+    <div className={`pad ${compact ? 'compact' : ''}`}>
       {['7', '8', '9', '4', '5', '6', '1', '2', '3'].map(digit)}
       <button type="button" className="key sub" disabled={disabled} onClick={onDelete} aria-label="1 文字消す">
         ⌫
