@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { correctAnswerOf } from '../domain/question.ts';
 import type { Answer } from '../domain/types.ts';
-import { createGame, gameReducer } from '../game/engine.ts';
+import { CORRECT_FEEDBACK_MS, createGame, gameReducer } from '../game/engine.ts';
 import type { GameConfig, GameState } from '../game/types.ts';
 import { createMemoryStore } from '../storage/kv.ts';
 import { Repository } from '../storage/repository.ts';
@@ -14,7 +14,9 @@ function playThrough(config: GameConfig, count: number): GameState {
   for (let i = 0; i < count && s.phase === 'playing'; i++) {
     const c = correctAnswerOf(s.question, s.questionDifficulty);
     const answer: Answer = c.kind === 'number' ? c.value : (c.pairs[0] as [number, number]);
-    s = gameReducer(s, { type: 'answer', answer, now: (i + 1) * 1000, at: AT + i });
+    const now = i * 2000 + 1000;
+    s = gameReducer(s, { type: 'answer', answer, now, at: AT + i });
+    s = gameReducer(s, { type: 'tick', now: now + CORRECT_FEEDBACK_MS, at: AT + i });
   }
   return s;
 }
@@ -42,7 +44,7 @@ describe('finishGame', () => {
 
   it('中断したプレイは 1 問ごとの記録だけ保存する', () => {
     const repo = new Repository(createMemoryStore());
-    const quit = gameReducer(playThrough(timeAttack, 5), { type: 'quit', now: 6000 });
+    const quit = gameReducer(playThrough(timeAttack, 5), { type: 'quit', now: 20_000 });
     const result = finishGame(repo, quit, AT + 100);
     expect(result.play).toBeNull();
     expect(result.newAchievements).toEqual([]);

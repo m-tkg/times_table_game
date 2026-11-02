@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { correctAnswerOf, judge } from '../domain/question.ts';
 import type { NormalSettings } from '../domain/records.ts';
 import type { Answer } from '../domain/types.ts';
-import { createGame, gameClockMs, gameReducer, isRecordable, questionRemainingMs, summaryOf, timeRemainingMs } from './engine.ts';
+import { CORRECT_FEEDBACK_MS, createGame, gameClockMs, gameReducer, isRecordable, questionRemainingMs, summaryOf, timeRemainingMs } from './engine.ts';
 import type { GameConfig, GameState } from './types.ts';
 
 const AT = Date.UTC(2026, 10, 2, 10);
@@ -30,6 +30,10 @@ function wrongAnswer(state: GameState): Answer {
 
 const answer = (state: GameState, value: Answer, now: number) => gameReducer(state, { type: 'answer', answer: value, now, at: AT + now });
 const tick = (state: GameState, now: number) => gameReducer(state, { type: 'tick', now, at: AT + now });
+/** now に正解し、正解演出（CORRECT_FEEDBACK_MS）が終わるまで進める */
+const right = (state: GameState, now: number) => tick(answer(state, rightAnswer(state), now), now + CORRECT_FEEDBACK_MS);
+/** i 問目（0 始まり）を、問題表示の 1 秒後に答える時刻。正解演出の 1 秒を挟むので 2 秒ごと */
+const at = (i: number) => i * 2000 + 1000;
 
 describe('createGame', () => {
   it('入力モードは選択肢なしで 1 問目から始まる', () => {
@@ -49,7 +53,7 @@ describe('createGame', () => {
 describe('タイムアタック', () => {
   it('20 問正解すると終了し、スコアは経過時間', () => {
     let s = start(normal());
-    for (let i = 0; i < 20; i++) s = answer(s, rightAnswer(s), (i + 1) * 1000);
+    for (let i = 0; i < 20; i++) s = right(s, at(i));
     expect(s.phase).toBe('finished');
     expect(s.correctCount).toBe(20);
     expect(summaryOf(s)).toEqual({ correctCount: 20, answeredCount: 20, totalMs: 20_000 });
@@ -66,8 +70,9 @@ describe('タイムアタック', () => {
     expect(s.penaltyMs).toBe(3000);
     expect(s.flash?.kind).toBe('wrong');
     s = answer(s, rightAnswer(s), 2000);
-    expect(s.questionNumber).toBe(2);
     expect(s.records).toHaveLength(1);
+    s = tick(s, 2000 + CORRECT_FEEDBACK_MS);
+    expect(s.questionNumber).toBe(2);
     expect(s.records[0]).toMatchObject({ correct: false, responseMs: 2000 });
   });
 
@@ -83,7 +88,7 @@ describe('タイムアタック', () => {
     let s = start(normal());
     for (let i = 0; i < 20; i++) {
       if (i === 0) s = answer(s, wrongAnswer(s), 500);
-      s = answer(s, rightAnswer(s), (i + 1) * 1000);
+      s = right(s, at(i));
     }
     expect(s.phase).toBe('finished');
     expect(summaryOf(s)).toEqual({ correctCount: 19, answeredCount: 20, totalMs: 20_000 + 3000 });
@@ -114,11 +119,53 @@ describe('タイムアタック', () => {
         now += 1500;
         s = tick(s, now);
       } else {
-        s = answer(s, rightAnswer(s), now);
+        s = right(s, now);
+        now += CORRECT_FEEDBACK_MS;
       }
     }
     expect(s.phase).toBe('finished');
     expect(summaryOf(s)).toEqual({ correctCount: 19, answeredCount: 20, totalMs: 20_000 + 3000 });
+  });
+});
+
+describe('正解演出', () => {
+  it('正解すると約 1 秒、入力した値と ✓ を見せてから次の問題へ進む', () => {
+    let s = start(normal());
+    const value = rightAnswer(s);
+    s = answer(s, value, 1000);
+    expect(s.phase).toBe('feedback');
+    expect(s.feedback).toMatchObject({ correct: true, answer: value, timeout: false });
+    expect(s.questionNumber).toBe(1);
+    s = tick(s, 1000 + CORRECT_FEEDBACK_MS - 1);
+    expect(s.phase).toBe('feedback');
+    s = tick(s, 1000 + CORRECT_FEEDBACK_MS);
+    expect(s.phase).toBe('playing');
+    expect(s.questionNumber).toBe(2);
+  });
+
+  it('演出中はタイマーが止まり、回答は受け付けない', () => {
+    let s = start(normal());
+    s = answer(s, rightAnswer(s), 1000);
+    expect(gameClockMs(s, 1900)).toBe(1000);
+    const before = s;
+    s = answer(s, 42, 1500);
+    expect(s).toBe(before);
+  });
+
+  it('誤答の表示は correct: false', () => {
+    let s = start(normal({ method: 'choice' }));
+    s = answer(s, wrongAnswer(s), 1000);
+    expect(s.feedback?.correct).toBe(false);
+  });
+
+  it('最後の問題でも演出を見せてから終了する', () => {
+    let s = start(normal());
+    for (let i = 0; i < 19; i++) s = right(s, at(i));
+    s = answer(s, rightAnswer(s), at(19));
+    expect(s.phase).toBe('feedback');
+    s = tick(s, at(19) + CORRECT_FEEDBACK_MS);
+    expect(s.phase).toBe('finished');
+    expect(summaryOf(s).totalMs).toBe(20_000);
   });
 });
 
@@ -127,11 +174,11 @@ describe('60 秒チャレンジ', () => {
 
   it('60 秒たつと終了する', () => {
     let s = start(config);
-    s = answer(s, rightAnswer(s), 1000);
-    s = tick(s, 59_999);
+    s = right(s, 1000); // 演出中の 1 秒は時計が止まる
+    s = tick(s, 60_999);
     expect(s.phase).toBe('playing');
-    expect(timeRemainingMs(s, 59_999)).toBe(1);
-    s = tick(s, 60_000);
+    expect(timeRemainingMs(s, 60_999)).toBe(1);
+    s = tick(s, 61_000);
     expect(s.phase).toBe('finished');
     expect(summaryOf(s)).toEqual({ correctCount: 1, answeredCount: 1, totalMs: 60_000 });
   });
@@ -184,7 +231,10 @@ describe('サバイバル', () => {
   it('5 問連続正解ごとに制限時間が 0.5 秒短くなり、ミスで連続数だけがリセットされる', () => {
     let s = start(config);
     let now = 0;
-    for (let i = 0; i < 5; i++) s = answer(s, rightAnswer(s), (now += 100));
+    for (let i = 0; i < 5; i++) {
+      s = right(s, (now += 100));
+      now += CORRECT_FEEDBACK_MS;
+    }
     expect(s.survivalLimitMs).toBe(5500);
     s = answer(s, wrongAnswer(s), (now += 100));
     s = tick(s, (now += 1500));
@@ -194,8 +244,8 @@ describe('サバイバル', () => {
 
   it('正解すると次の問題の制限時間がリセットされる', () => {
     let s = start(config);
-    s = answer(s, rightAnswer(s), 4000);
-    expect(questionRemainingMs(s, 4000)).toBe(6000);
+    s = right(s, 4000);
+    expect(questionRemainingMs(s, 4000 + CORRECT_FEEDBACK_MS)).toBe(6000);
   });
 });
 
@@ -252,7 +302,7 @@ describe('デイリーチャレンジ', () => {
       const qs = [];
       for (let i = 0; i < 5; i++) {
         qs.push(s.question);
-        s = answer(s, rightAnswer(s), (i + 1) * 1000);
+        s = right(s, at(i));
       }
       return qs;
     };
@@ -277,7 +327,7 @@ describe('苦手克服モード', () => {
       expect(['product', 'blank']).toContain(s.question.kind);
       const q = s.question as { a: number; b: number };
       expect(`${q.a}x${q.b}`).toBe(keys[i]);
-      s = answer(s, rightAnswer(s), (i + 1) * 60_000);
+      s = right(s, i * 120_000 + 60_000);
     }
     expect(s.phase).toBe('finished');
     expect(isRecordable(s)).toBe(false);
@@ -300,7 +350,7 @@ describe('練習モード', () => {
     for (let i = 0; i < 11; i++) {
       const q = s.question as { a: number; b: number };
       seen.push(`${q.a}x${q.b}`);
-      s = answer(s, rightAnswer(s), (i + 1) * 1000);
+      s = right(s, at(i));
     }
     expect(seen).toEqual(['3x1', '3x2', '3x3', '3x4', '3x5', '3x6', '3x7', '3x8', '3x9', '7x1', '7x2']);
   });
@@ -316,7 +366,7 @@ describe('練習モード', () => {
       expect(q.a).toBe(13);
       expect(q.b).toBeGreaterThanOrEqual(1);
       expect(q.b).toBeLessThanOrEqual(9);
-      s = answer(s, rightAnswer(s), (i + 1) * 1000);
+      s = right(s, at(i));
     }
     expect(s.phase).toBe('finished');
   });
@@ -326,7 +376,7 @@ describe('練習モード', () => {
       { mode: 'practice', tables: [2], order: 'random', count: 10, format: 'product', method: 'input' },
       { seed: 1, now: 0, playId: 'p' },
     );
-    for (let i = 0; i < 10; i++) s = answer(s, rightAnswer(s), (i + 1) * 1000);
+    for (let i = 0; i < 10; i++) s = right(s, at(i));
     expect(s.phase).toBe('finished');
   });
 
@@ -335,9 +385,9 @@ describe('練習モード', () => {
       { mode: 'practice', tables: [2], order: 'sequential', count: null, format: 'product', method: 'input' },
       { seed: 1, now: 0, playId: 'p' },
     );
-    for (let i = 0; i < 30; i++) s = answer(s, rightAnswer(s), (i + 1) * 1000);
+    for (let i = 0; i < 30; i++) s = right(s, at(i));
     expect(s.phase).toBe('playing');
-    s = gameReducer(s, { type: 'quit', now: 40_000 });
+    s = gameReducer(s, { type: 'quit', now: at(30) });
     expect(s.phase).toBe('finished');
     expect(s.aborted).toBe(false);
   });
