@@ -5,6 +5,7 @@ import { playSound, vibrate } from '../../app/feedback.ts';
 import { finishGame } from '../../app/finishGame.ts';
 import { DIFFICULTY_HINT, formatSeconds } from '../../app/labels.ts';
 import { correctAnswerText, judge } from '../../domain/question.ts';
+import { kukuReading } from '../../domain/reading.ts';
 import { randomSeed } from '../../domain/rng.ts';
 import { SURVIVAL_LIVES, TIMED60_MS } from '../../domain/score.ts';
 import type { Answer, Question } from '../../domain/types.ts';
@@ -209,6 +210,12 @@ function GameView({ config }: { config: GameConfig }) {
       : null;
   const endless = config.mode === 'practice' && config.count === null;
   const isTable = config.mode === 'table';
+  // ヒント（九九の読み方）: 標準の範囲で、かけ算・穴埋めのときだけ。スコアや正誤には影響しない
+  const reading =
+    state.questionDifficulty === 'standard' && state.question.kind !== 'factor' && state.phase !== 'paused'
+      ? kukuReading(state.question.a, state.question.b)
+      : null;
+  const hint = reading ? <Hint key={state.questionNumber} reading={reading} /> : null;
   const questionLine = (
     <div
       key={state.flash?.id ?? 0}
@@ -223,6 +230,12 @@ function GameView({ config }: { config: GameConfig }) {
       />
     </div>
   );
+  const tableQuestion = (
+    <div className="table-question">
+      {questionLine}
+      {hint}
+    </div>
+  );
 
   return (
     <main className={`game ${isTable ? 'table' : ''}`}>
@@ -232,7 +245,7 @@ function GameView({ config }: { config: GameConfig }) {
         now={now}
         onPause={togglePause}
         onEnd={endless ? quit : undefined}
-        question={isTable && state.phase !== 'paused' ? questionLine : undefined}
+        question={isTable && state.phase !== 'paused' ? tableQuestion : undefined}
       />
 
       <div className={`question-area ${isTable ? 'table' : ''}`}>
@@ -256,6 +269,7 @@ function GameView({ config }: { config: GameConfig }) {
             {state.streak >= 3 && <div className="combo num">COMBO ×{state.streak}</div>}
           </div>
         )}
+        {!isTable && hint && <div className="hint-corner">{hint}</div>}
         {/* 正誤の表示は問題の領域に重ねる（テンキーを押し下げない）。表うめは表のマスが緑になるので出さない */}
         {state.phase === 'feedback' && state.feedback && !isTable && <FeedbackBanner state={state} />}
       </div>
@@ -432,6 +446,23 @@ function Hud({
         </div>
       )}
     </>
+  );
+}
+
+/** ヒントボタン。押すと九九の読み方を吹き出しで出す。もう一度押すと消える */
+function Hint({ reading }: { reading: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="hint">
+      <button type="button" className={`hint-btn ${open ? 'on' : ''}`} aria-label="ヒント" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        💡<span className="label">ヒント</span>
+      </button>
+      {open && (
+        <span className="hint-bubble" role="tooltip">
+          {reading}
+        </span>
+      )}
+    </span>
   );
 }
 

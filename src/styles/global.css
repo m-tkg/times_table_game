@@ -1161,3 +1161,84 @@ button.list-row {
   left: 8px;
   font-size: 10px;
 }
+
+/* ヒント（九九の読み方） */
+.hint {
+  position: relative;
+  display: inline-flex;
+}
+
+.hint-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.hint-btn.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.hint-bubble {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 5;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+  animation: hint-pop 0.15s ease-out;
+}
+
+.hint-bubble::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 22px;
+  border: 6px solid transparent;
+  border-top: 0;
+  border-bottom-color: var(--text);
+}
+
+@keyframes hint-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.hint-corner {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  z-index: 4;
+}
+
+/* 表うめ: 上部のバーで問題文の横に置く。幅を節約するため文字は隠す */
+.table-question {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.table-question .hint-btn {
+  height: 30px;
+  padding: 0 8px;
+}
+
+.table-question .hint-btn .label {
+  display: none;
+}
