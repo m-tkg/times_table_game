@@ -283,6 +283,7 @@ function advance(state: GameState, now: number): GameState {
     firstWrongAnswer: null,
     phase: 'playing',
     feedback: null,
+    notice: null,
   };
 }
 
@@ -291,7 +292,6 @@ function enterFeedback(
   state: GameState,
   now: number,
   answer: Answer | null,
-  outOfRange: boolean,
   timeout: boolean,
   correct = false,
 ): GameState {
@@ -304,7 +304,6 @@ function enterFeedback(
       remainingMs: duration,
       correct,
       answer,
-      outOfRange,
       timeout,
       correctAnswer: correctAnswerOf(state.question, state.questionDifficulty),
     },
@@ -320,6 +319,11 @@ function onAnswer(state: GameState, answer: Answer, now: number, at: number): Ga
 
   const responseMs = clock - state.questionStartMs;
   const result = judge(state.question, answer, state.questionDifficulty);
+  // 逆算で積は合っているが範囲外の組: 不正解にせず、お知らせを出して答え直してもらう
+  if (result.outOfRange) {
+    return { ...state, notice: { kind: 'outOfRange', id: (state.notice?.id ?? 0) + 1 } };
+  }
+  state = { ...state, notice: null };
   const timeAttackInput = isRule(state, 'timeAttack') && state.settings.method === 'input';
 
   if (result.correct) {
@@ -340,7 +344,7 @@ function onAnswer(state: GameState, answer: Answer, now: number, at: number): Ga
       flash: nextFlash(state, 'correct'),
       ...stopClock(state, now),
     };
-    return enterFeedback(next, now, answer, false, false, true);
+    return enterFeedback(next, now, answer, false, true);
   }
 
   if (timeAttackInput) {
@@ -366,7 +370,7 @@ function onAnswer(state: GameState, answer: Answer, now: number, at: number): Ga
     wrongRecords: [...state.wrongRecords, record],
     flash: nextFlash(state, 'wrong'),
   };
-  return enterFeedback(missed, now, answer, result.outOfRange, false);
+  return enterFeedback(missed, now, answer, false);
 }
 
 function onTimeout(state: GameState, now: number, at: number): GameState {
@@ -383,7 +387,7 @@ function onTimeout(state: GameState, now: number, at: number): GameState {
     wrongRecords: [...state.wrongRecords, record],
     flash: nextFlash(state, 'wrong'),
   };
-  return enterFeedback(missed, now, null, false, true);
+  return enterFeedback(missed, now, null, true);
 }
 
 function onTick(state: GameState, now: number, at: number): GameState {

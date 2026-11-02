@@ -571,6 +571,16 @@ a {
   background: var(--correct);
 }
 
+.feedback.notice {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  animation: hint-pop 0.15s ease-out;
+}
+
+.feedback.notice .mark {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
 .feedback small {
   display: block;
   color: var(--muted);

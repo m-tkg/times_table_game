@@ -270,6 +270,17 @@ function GameView({ config }: { config: GameConfig }) {
           </div>
         )}
         {!isTable && hint && <div className="hint-corner">{hint}</div>}
+        {state.notice && state.phase === 'playing' && (
+          <div key={state.notice.id} className="feedback notice" role="status">
+            <span className="mark" aria-hidden>
+              !
+            </span>
+            <div>
+              範囲外の組です
+              <small>{DIFFICULTY_HINT[state.questionDifficulty]} の組で答え直してください</small>
+            </div>
+          </div>
+        )}
         {/* 正誤の表示は問題の領域に重ねる（テンキーを押し下げない）。表うめは表のマスが緑になるので出さない */}
         {state.phase === 'feedback' && state.feedback && !isTable && <FeedbackBanner state={state} />}
       </div>
@@ -543,7 +554,6 @@ function FeedbackBanner({ state }: { state: GameState }) {
       </span>
       <div>
         {fb.timeout ? '時間切れ ・ ' : ''}正解: <span className="num">{correctAnswerText(fb.correctAnswer)}</span>
-        {fb.outOfRange && <small>その組は範囲外です（{DIFFICULTY_HINT[state.questionDifficulty]}）</small>}
       </div>
     </div>
   );
