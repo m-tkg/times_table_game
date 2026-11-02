@@ -325,7 +325,7 @@ function GameView({ config }: { config: GameConfig }) {
               再開する
             </button>
             <button type="button" className="btn" onClick={quit}>
-              {config.mode === 'practice' ? '終了する' : 'やめる'}
+              やめる
             </button>
             {(config.mode === 'normal' || config.mode === 'daily' || config.mode === 'table') && (
               <small className="muted">途中でやめたプレイのスコアは記録されません</small>
