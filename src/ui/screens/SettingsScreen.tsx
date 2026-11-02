@@ -32,6 +32,10 @@ export function SettingsScreen() {
     <main className="screen">
       <TopBar title="アプリ設定" />
       <div className="card">
+        <Toggle label="自動で判定する" checked={appSettings.autoSubmit} onChange={(v) => updateAppSettings({ autoSubmit: v })} />
+        <small className="muted" style={{ display: 'block', margin: '-2px 0 8px', fontSize: 12 }}>
+          正答と同じ桁数まで入力したら、決定を押さなくても判定します
+        </small>
         <Toggle
           label="効果音"
           checked={appSettings.sound}

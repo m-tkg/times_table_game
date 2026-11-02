@@ -8,6 +8,7 @@ import { correctAnswerText, judge } from '../../domain/question.ts';
 import { randomSeed } from '../../domain/rng.ts';
 import { SURVIVAL_LIVES, TIMED60_MS } from '../../domain/score.ts';
 import type { Answer, Question } from '../../domain/types.ts';
+import { autoSubmitAnswer } from '../../game/autoSubmit.ts';
 import { createGame, gameClockMs, gameReducer, questionRemainingMs, timeRemainingMs, totalQuestions } from '../../game/engine.ts';
 import type { GameConfig, GameState } from '../../game/types.ts';
 
@@ -93,9 +94,17 @@ function GameView({ config }: { config: GameConfig }) {
     if (appSettings.vibration) vibrate(flash.kind);
   }, [state.flash, state.streak, appSettings.sound, appSettings.vibration, setInput]);
 
-  const submitAnswer = useCallback((answer: Answer) => {
-    dispatch({ type: 'answer', answer, now: performance.now(), at: Date.now() });
-  }, []);
+  // 素早い入力でも、いま表示中の問題で自動判定できるよう ref にも持つ
+  const questionRef = useRef({ question: state.question, difficulty: state.questionDifficulty });
+  questionRef.current = { question: state.question, difficulty: state.questionDifficulty };
+
+  const submitAnswer = useCallback(
+    (answer: Answer) => {
+      dispatch({ type: 'answer', answer, now: performance.now(), at: Date.now() });
+      setInput(EMPTY_INPUT);
+    },
+    [setInput],
+  );
 
   const isFactor = state.question.kind === 'factor';
   const playing = state.phase === 'playing';
@@ -108,8 +117,13 @@ function GameView({ config }: { config: GameConfig }) {
       const next: [string, string] = [...slots];
       next[active] = current === '0' ? d : current + d;
       setInput({ slots: next, active });
+      if (appSettings.autoSubmit) {
+        const { question, difficulty } = questionRef.current;
+        const answer = autoSubmitAnswer(question, difficulty, next);
+        if (answer !== null) submitAnswer(answer);
+      }
     },
-    [setInput],
+    [setInput, appSettings.autoSubmit, submitAnswer],
   );
 
   const pressDelete = useCallback(() => {

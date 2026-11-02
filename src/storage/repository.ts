@@ -14,9 +14,11 @@ export interface AppSettings {
   sound: boolean;
   vibration: boolean;
   theme: ThemeSetting;
+  /** 正答の桁数まで入力したら決定キーなしで判定する */
+  autoSubmit: boolean;
 }
 
-export const DEFAULT_APP_SETTINGS: AppSettings = { sound: false, vibration: false, theme: 'system' };
+export const DEFAULT_APP_SETTINGS: AppSettings = { sound: false, vibration: false, theme: 'system', autoSubmit: true };
 
 export interface PracticeSettings {
   tables: number[];
