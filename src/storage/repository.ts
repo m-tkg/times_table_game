@@ -44,6 +44,7 @@ const KEYS = {
   daily: 'kuku:daily',
   days: 'kuku:days',
   achievements: 'kuku:achievements',
+  counters: 'kuku:counters',
 } as const;
 
 /** プレイ一覧の保持件数（ベスト・デイリーは別に保持するので消えない） */
@@ -53,6 +54,12 @@ const MAX_PLAYS = 3000;
 export function bestKeyOf(play: Pick<PlayRecord, 'mode' | 'settings'>): string {
   return play.mode === 'daily' ? 'daily' : settingsKey(play.settings);
 }
+
+export interface Counters {
+  weaknessCompleted: number;
+}
+
+const DEFAULT_COUNTERS: Counters = { weaknessCompleted: 0 };
 
 export interface SaveResult {
   ok: boolean;
@@ -129,7 +136,18 @@ export class Repository {
     return this.readRecord<number>(KEYS.achievements);
   }
 
+  loadCounters(): Counters {
+    const v = this.read<Partial<Counters>>(KEYS.counters, {});
+    return { ...DEFAULT_COUNTERS, ...(isObject(v) ? v : {}) };
+  }
+
   // ---- 書き込み ----
+
+  incrementCounter(name: keyof Counters): boolean {
+    const counters = this.loadCounters();
+    counters[name] += 1;
+    return this.write(KEYS.counters, counters);
+  }
 
   saveAppSettings(settings: AppSettings): boolean {
     return this.write(KEYS.settings, settings);
