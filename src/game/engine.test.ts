@@ -479,9 +479,11 @@ describe('表うめモード', () => {
 
   it('全マス埋めると終了し、スコアはペナルティ込みの時間、記録対象になる', () => {
     let s = start(table('standard', 20));
+    // 問題表示の 1 秒後に答え、0.5 秒の演出を挟むので 1.5 秒ごと
+    const tableAt = (i: number) => i * 1500 + 1000;
     for (let i = 0; i < 20; i++) {
       if (i === 0) s = answer(s, wrongAnswer(s), 500);
-      s = tick(answer(s, rightAnswer(s), at(i)), at(i) + TABLE_CORRECT_FEEDBACK_MS);
+      s = tick(answer(s, rightAnswer(s), tableAt(i)), tableAt(i) + TABLE_CORRECT_FEEDBACK_MS);
     }
     expect(s.phase).toBe('finished');
     expect(summaryOf(s)).toEqual({ correctCount: 19, answeredCount: 20, totalMs: 20_000 + 3000 });

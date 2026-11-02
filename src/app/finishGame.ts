@@ -25,9 +25,10 @@ export function finishGame(repo: Repository, state: GameState, at: number): Game
     ? {
         id: state.playId,
         at,
-        mode: config.mode === 'daily' ? 'daily' : 'normal',
+        mode: config.mode === 'daily' ? 'daily' : config.mode === 'table' ? 'table' : 'normal',
         settings: state.settings,
         ...(config.mode === 'daily' ? { dailyDate: config.date } : {}),
+        ...(config.mode === 'table' ? { tableCount: config.count } : {}),
         ...summary,
         score: scoreOf(state.settings.rule, summary),
       }
@@ -44,7 +45,8 @@ export function finishGame(repo: Repository, state: GameState, at: number): Game
         mode: config.mode,
         settings: state.settings,
         completed,
-        recordable,
+        // ルール・難易度の実績は通常・デイリーだけが対象（表うめは別の遊び方なので含めない）
+        recordable: recordable && config.mode !== 'table',
         correctCount: summary.correctCount,
         answeredCount: summary.answeredCount,
         wrongCount: state.wrongRecords.length,

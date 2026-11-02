@@ -1,5 +1,5 @@
 import { compareResults } from '../domain/score.ts';
-import { settingsKey, type AnswerRecord, type NormalSettings, type PlayRecord } from '../domain/records.ts';
+import { settingsKey, type AnswerRecord, type NormalSettings, type PlayRecord, type TableCount } from '../domain/records.ts';
 import { compactLog, emptyCellStats, localDateKey, MAX_RAW_RECORDS, type CellStatsMap } from '../domain/stats.ts';
 import type { PracticeFormat } from '../game/types.ts';
 import type { AnswerMethod } from '../domain/types.ts';
@@ -51,8 +51,15 @@ const KEYS = {
 const MAX_PLAYS = 3000;
 
 /** ベスト記録のキー。デイリーは通常モードと分けて 'daily' にまとめる */
-export function bestKeyOf(play: Pick<PlayRecord, 'mode' | 'settings'>): string {
-  return play.mode === 'daily' ? 'daily' : settingsKey(play.settings);
+export function bestKeyOf(play: Pick<PlayRecord, 'mode' | 'settings' | 'tableCount'>): string {
+  if (play.mode === 'daily') return 'daily';
+  if (play.mode === 'table') return tableBestKey(play.settings.difficulty, play.tableCount ?? 20);
+  return settingsKey(play.settings);
+}
+
+/** 表うめのベスト記録のキー（難易度 × マス数） */
+export function tableBestKey(difficulty: NormalSettings['difficulty'], count: TableCount): string {
+  return `table/${difficulty}/${count}`;
 }
 
 export interface Counters {

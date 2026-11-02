@@ -1,7 +1,7 @@
 import { generateChoices } from '../domain/choices.ts';
 import { correctAnswerOf, generateQuestion, judge, questionFromPair } from '../domain/question.ts';
-import { parseCellKey } from '../domain/range.ts';
-import { DAILY_SETTINGS, type AnswerRecord, type NormalSettings, type PlayMode } from '../domain/records.ts';
+import { heatmapAxes, parseCellKey } from '../domain/range.ts';
+import { DAILY_SETTINGS, type AnswerRecord, type NormalSettings, type PlayMode, type TableCount } from '../domain/records.ts';
 import { createRng, seedFromString } from '../domain/rng.ts';
 import {
   nextSurvivalLimit,
@@ -12,13 +12,17 @@ import {
   TIMED60_MS,
   type ScoreSummary,
 } from '../domain/score.ts';
-import type { Answer, Difficulty, Question, Rng } from '../domain/types.ts';
+import type { Answer, Difficulty, Pair, Question, Rng } from '../domain/types.ts';
 import type { GameAction, GameConfig, GameState } from './types.ts';
 
 /** 誤答・時間切れの正答表示の長さ */
 export const FEEDBACK_MS = 1500;
 /** 正解演出の長さ（入力した値が合っていたのを目で確認できるように） */
 export const CORRECT_FEEDBACK_MS = 1000;
+/** 表うめの正解演出の長さ（入れた数字が表に残るので短め） */
+export const TABLE_CORRECT_FEEDBACK_MS = 500;
+/** 表うめで「20 マス」を選んだときのマス数 */
+export const TABLE_SHORT_COUNT = 20;
 
 interface CreateOptions {
   seed: number;
@@ -30,6 +34,7 @@ interface CreateOptions {
 export function createGame(config: GameConfig, { seed, now, playId }: CreateOptions): GameState {
   const settings = settingsOf(config);
   const rng = createRng(config.mode === 'daily' ? seedFromString(config.date) : seed);
+  const tableOrder = config.mode === 'table' ? makeTableOrder(config.difficulty, config.count, rng) : null;
   const base: Omit<GameState, 'question' | 'questionDifficulty' | 'choices'> = {
     config,
     playId,
@@ -54,8 +59,9 @@ export function createGame(config: GameConfig, { seed, now, playId }: CreateOpti
     wrongRecords: [],
     rngState: rng.state,
     aborted: false,
+    tableOrder,
   };
-  return { ...base, ...buildQuestion(config, settings, 1, rng, null), rngState: rng.state };
+  return { ...base, ...buildQuestion(config, settings, 1, rng, null, tableOrder), rngState: rng.state };
 }
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
@@ -102,6 +108,8 @@ export function totalQuestions(state: GameState): number | null {
       return config.keys.length;
     case 'practice':
       return config.count;
+    case 'table':
+      return state.tableOrder?.length ?? 0;
   }
 }
 
@@ -119,7 +127,8 @@ export function summaryOf(state: GameState): ScoreSummary {
 
 /** ベスト記録・プレイ記録に残すか（通常・デイリーで、最後まで遊んだもの） */
 export function isRecordable(state: GameState): boolean {
-  return state.phase === 'finished' && !state.aborted && (state.config.mode === 'normal' || state.config.mode === 'daily');
+  const { mode } = state.config;
+  return state.phase === 'finished' && !state.aborted && (mode === 'normal' || mode === 'daily' || mode === 'table');
 }
 
 // ---- 内部 ----
@@ -132,6 +141,8 @@ function settingsOf(config: GameConfig): NormalSettings {
       return DAILY_SETTINGS;
     case 'weakness':
       return { rule: 'timeAttack', format: 'mix', method: config.method, difficulty: config.difficulty };
+    case 'table':
+      return { rule: 'timeAttack', format: 'product', method: 'input', difficulty: config.difficulty };
     case 'practice':
       return {
         rule: 'timeAttack',
@@ -142,10 +153,10 @@ function settingsOf(config: GameConfig): NormalSettings {
   }
 }
 
-/** 制限時間やルールが効くのは通常・デイリーだけ。苦手克服・練習は時間制限なし */
+/** ルールが効くのは通常・デイリー・表うめ（タイムアタック扱い）。苦手克服・練習は時間制限なし */
 function isRule(state: GameState, rule: NormalSettings['rule']): boolean {
   const { mode } = state.config;
-  return (mode === 'normal' || mode === 'daily') && state.settings.rule === rule;
+  return (mode === 'normal' || mode === 'daily' || mode === 'table') && state.settings.rule === rule;
 }
 
 function playModeOf(config: GameConfig): PlayMode {
@@ -160,12 +171,21 @@ function difficultyOfTable(table: number): Difficulty {
   return table >= 10 ? 'advanced' : 'standard';
 }
 
+/** 表うめの出題順。表の全マスをシャッフルし、「20 マス」なら先頭 20 マスを使う */
+function makeTableOrder(difficulty: Difficulty, count: TableCount, rng: Rng): Pair[] {
+  const { rows, cols } = heatmapAxes(difficulty);
+  const cells = rows.flatMap((r) => cols.map((c) => [r, c] as Pair));
+  const shuffled = rng.shuffle(cells);
+  return count === 'all' ? shuffled : shuffled.slice(0, TABLE_SHORT_COUNT);
+}
+
 function buildQuestion(
   config: GameConfig,
   settings: NormalSettings,
   questionNumber: number,
   rng: Rng,
   prev: Question | null,
+  tableOrder: Pair[] | null,
 ): Pick<GameState, 'question' | 'questionDifficulty' | 'choices'> {
   let question: Question;
   let difficulty: Difficulty = settings.difficulty;
@@ -182,6 +202,11 @@ function buildQuestion(
       let [a, b] = parseCellKey(config.keys[questionNumber - 1] ?? config.keys[0] ?? '1x1');
       if (difficulty === 'advanced' && rng.next() < 0.5) [a, b] = [b, a];
       question = questionFromPair(rng.next() < 0.5 ? 'product' : 'blank', [a, b], rng);
+      break;
+    }
+    case 'table': {
+      const [a, b] = tableOrder?.[questionNumber - 1] ?? [1, 1];
+      question = { kind: 'product', a, b };
       break;
     }
     case 'practice': {
@@ -244,7 +269,7 @@ function advance(state: GameState, now: number): GameState {
   if (isComplete(state)) return finish(state, now);
   const rng = createRng(state.rngState);
   const questionNumber = state.questionNumber + 1;
-  const built = buildQuestion(state.config, state.settings, questionNumber, rng, state.question);
+  const built = buildQuestion(state.config, state.settings, questionNumber, rng, state.question, state.tableOrder);
   const clockElapsedMs = gameClockMs(state, now);
   return {
     ...state,
@@ -269,7 +294,7 @@ function enterFeedback(
   timeout: boolean,
   correct = false,
 ): GameState {
-  const duration = correct ? CORRECT_FEEDBACK_MS : FEEDBACK_MS;
+  const duration = !correct ? FEEDBACK_MS : state.config.mode === 'table' ? TABLE_CORRECT_FEEDBACK_MS : CORRECT_FEEDBACK_MS;
   return {
     ...state,
     phase: 'feedback',
