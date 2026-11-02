@@ -48,16 +48,21 @@ describe('Repository', () => {
     expect(repo.loadDays()).toEqual({});
   });
 
-  it('効果音・振動の既定値は OFF、テーマは OS に従う', () => {
-    expect(DEFAULT_APP_SETTINGS).toEqual({ sound: false, vibration: false, theme: 'system' });
+  it('効果音・振動の既定値は OFF、テーマは OS に従う、自動判定は ON', () => {
+    expect(DEFAULT_APP_SETTINGS).toEqual({ sound: false, vibration: false, theme: 'system', autoSubmit: true });
+  });
+
+  it('自動判定の項目がない古い設定を読んでも、自動判定は ON になる', () => {
+    store.setItem('kuku:settings', JSON.stringify({ sound: true, vibration: false, theme: 'dark' }));
+    expect(repo.loadAppSettings()).toEqual({ sound: true, vibration: false, theme: 'dark', autoSubmit: true });
   });
 
   it('アプリ設定と前回の設定を保存して読み戻せる', () => {
-    repo.saveAppSettings({ sound: true, vibration: false, theme: 'dark' });
+    repo.saveAppSettings({ sound: true, vibration: false, theme: 'dark', autoSubmit: false });
     const s = { rule: 'survival', format: 'mix', method: 'choice', difficulty: 'expert' } as const;
     repo.saveLastSettings(s);
     const reloaded = new Repository(store);
-    expect(reloaded.loadAppSettings()).toEqual({ sound: true, vibration: false, theme: 'dark' });
+    expect(reloaded.loadAppSettings()).toEqual({ sound: true, vibration: false, theme: 'dark', autoSubmit: false });
     expect(reloaded.loadLastSettings()).toEqual(s);
   });
 
@@ -156,7 +161,7 @@ describe('Repository', () => {
 
   it('全記録の削除でアプリのキーだけを消す', () => {
     store.setItem('other-app', 'keep');
-    repo.saveAppSettings({ sound: true, vibration: true, theme: 'light' });
+    repo.saveAppSettings({ sound: true, vibration: true, theme: 'light', autoSubmit: true });
     repo.saveGameResult({ records: [answerRecord()], play: play() });
     repo.clearAll();
     expect(repo.loadAnswers()).toEqual([]);
