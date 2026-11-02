@@ -968,43 +968,95 @@ button.list-row {
 }
 
 /* ===== 表うめ ===== */
+/* 画面の高さちょうどに収め、表が残りの高さ・幅に合わせて縮む（iPhone SE でもスクロールなし） */
+.game.table {
+  /* .app がセーフエリア分の余白を持つので、その分を引く */
+  height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  min-height: 0;
+  overflow: hidden;
+}
+
 .question-area.table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 6px 10px 0;
+}
+
+.table-fit {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  container-type: size;
+  display: grid;
+  place-items: center;
+}
+
+.table-fit .table-grid {
+  width: min(100cqw, 100cqh * var(--ratio), 480px);
+  max-width: none;
+}
+
+.hud.table-hud {
+  grid-template-columns: 40px 1fr auto;
+  padding: 8px 12px 2px;
+}
+
+.hud.table-hud .icon-btn {
+  width: 40px;
+  height: 40px;
+}
+
+.hud.table-hud .meta {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 14px 0;
-  min-height: 0;
+  align-items: flex-end;
+  font-size: 13px;
+  line-height: 1.3;
 }
 
 .question.small {
-  font-size: clamp(26px, 8vw, 36px);
+  font-size: clamp(22px, 7vw, 32px);
   text-align: center;
+  letter-spacing: 0;
+}
+
+.question.small .slot {
+  border-bottom-width: 4px;
+  min-width: 1.4em;
+}
+
+.progress.thin {
+  height: 6px;
+  margin-top: 4px;
 }
 
 .table-grid {
   display: grid;
   gap: 2px;
   font-weight: 800;
-  font-size: clamp(11px, 3.4vw, 15px);
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
+  container-type: inline-size;
+  /* マスの大きさに合わせて文字を縮める */
+  font-size: calc(100cqw / var(--n) * 0.42);
 }
 
 .table-grid.wide {
-  font-size: clamp(9px, 2.9vw, 13px);
+  font-size: calc(100cqw / var(--n) * 0.34);
 }
 
 .table-grid .head,
 .table-grid .corner,
 .table-grid .cell {
-  aspect-ratio: 1;
   display: grid;
   place-items: center;
   border-radius: 5px;
   min-width: 0;
+  min-height: 0;
 }
 
 .table-grid .head,
@@ -1033,10 +1085,10 @@ button.list-row {
 .table-grid .cell.missed::after {
   content: '';
   position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 5px;
-  height: 5px;
+  top: 2px;
+  right: 2px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   background: var(--wrong);
 }
@@ -1065,19 +1117,19 @@ button.list-row {
 }
 
 .pad.compact {
-  gap: 8px;
-  padding: 10px 14px 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 8px 12px 10px;
 }
 
 .pad.compact .key {
-  height: 50px;
+  height: 46px;
   font-size: 22px;
+  border-radius: 12px;
 }
 
-/* カードの中（結果画面）ではマスを背景と区別できる色にする */
-.card .table-grid .cell {
-  background: var(--surface-2);
-  box-shadow: none;
+.pad.compact .key.ok {
+  font-size: 16px;
 }
 
 .table-grid .cell.reveal {
@@ -1087,11 +1139,19 @@ button.list-row {
 }
 
 .choices.compact {
-  gap: 10px;
-  padding: 10px 14px 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 8px 12px 12px;
 }
 
 .choices.compact .choice {
-  height: 64px;
-  font-size: 28px;
+  height: 56px;
+  font-size: 22px;
+  border-radius: 14px;
+}
+
+.choices.compact .choice small {
+  top: 4px;
+  left: 8px;
+  font-size: 10px;
 }

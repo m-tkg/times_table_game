@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { heatmapAxes } from '../domain/range.ts';
 import type { AnswerRecord } from '../domain/records.ts';
 import type { Difficulty, Pair } from '../domain/types.ts';
@@ -15,12 +15,14 @@ export interface TableGridProps {
   justSolvedValue?: number | null;
   /** いまのマスで間違え、正答を見せているか（4 択） */
   revealed?: boolean;
+  /** 親の残りの高さ・幅に収まるように縮める（ゲーム画面） */
+  fit?: boolean;
 }
 
 const keyOf = (a: number, b: number) => `${a}x${b}`;
 
 /** 表うめの九九表。埋まったマスは数字を残し、一度間違えたマスには印をつける */
-export function TableGrid({ difficulty, records, current, justSolved = false, justSolvedValue = null, revealed = false }: TableGridProps) {
+export function TableGrid({ difficulty, records, current, justSolved = false, justSolvedValue = null, revealed = false, fit = false }: TableGridProps) {
   const { rows, cols } = heatmapAxes(difficulty);
   const solved = new Map<string, boolean>();
   for (const r of records) {
@@ -29,8 +31,16 @@ export function TableGrid({ difficulty, records, current, justSolved = false, ju
   }
   const currentKey = current ? keyOf(current[0], current[1]) : null;
 
-  return (
-    <div className={`table-grid num ${difficulty === 'standard' ? '' : 'wide'}`} style={{ gridTemplateColumns: `repeat(${cols.length + 1}, 1fr)` }} role="grid" aria-label="九九表">
+  const n = cols.length + 1;
+  const m = rows.length + 1;
+  const style = {
+    gridTemplateColumns: `repeat(${n}, 1fr)`,
+    gridTemplateRows: `repeat(${m}, 1fr)`,
+    aspectRatio: `${n} / ${m}`,
+    '--n': n,
+  } as CSSProperties;
+  const grid = (
+    <div className={`table-grid num ${difficulty === 'standard' ? '' : 'wide'}`} style={style} role="grid" aria-label="九九表">
       <span className="corner" aria-hidden>
         ×
       </span>
@@ -73,6 +83,7 @@ export function TableGrid({ difficulty, records, current, justSolved = false, ju
       ))}
     </div>
   );
+  return fit ? <div className="table-fit" style={{ '--ratio': n / m } as CSSProperties}>{grid}</div> : grid;
 }
 
 function Row({ children }: { children: ReactNode }) {
