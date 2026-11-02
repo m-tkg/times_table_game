@@ -389,10 +389,11 @@ a {
 
 /* ===== ゲーム ===== */
 .game {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  /* 画面の高さちょうどに収める（iPhone SE でもスクロールなし）。.app がセーフエリア分の余白を持つので引く */
+  height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow: hidden;
 }
 
 .hud {
@@ -437,19 +438,26 @@ a {
 }
 
 .question-area {
+  position: relative;
   flex: 1;
+  min-height: 0;
   display: grid;
   place-items: center;
   text-align: center;
-  padding: 12px;
-  min-height: 180px;
+  padding: 8px 12px;
 }
 
 .question {
-  font-size: clamp(40px, 13vw, 64px);
+  white-space: nowrap;
+  font-size: clamp(30px, min(13vw, 8dvh), 64px);
   font-weight: 900;
   letter-spacing: 0.02em;
   line-height: 1.2;
+}
+
+.question.factor {
+  /* 逆算は「112 = ? × ?」と横に長いので一段小さくする */
+  font-size: clamp(26px, min(10vw, 7dvh), 52px);
 }
 
 .slot {
@@ -529,7 +537,11 @@ a {
 }
 
 .feedback {
-  margin: 0 16px;
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 6px;
+  text-align: left;
   border-radius: 16px;
   padding: 12px 14px;
   background: color-mix(in srgb, var(--wrong) 16%, var(--surface));
@@ -567,12 +579,12 @@ a {
 .pad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  padding: 12px 16px 20px;
+  gap: clamp(6px, 1.4dvh, 10px);
+  padding: 8px 16px clamp(10px, 2.5dvh, 20px);
 }
 
 .key {
-  height: 60px;
+  height: clamp(42px, 8.5dvh, 60px);
   border-radius: 16px;
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -601,7 +613,7 @@ a {
 
 .choice {
   position: relative;
-  height: 84px;
+  height: clamp(56px, 12dvh, 84px);
   border-radius: 20px;
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -969,13 +981,6 @@ button.list-row {
 
 /* ===== 表うめ ===== */
 /* 画面の高さちょうどに収め、表が残りの高さ・幅に合わせて縮む（iPhone SE でもスクロールなし） */
-.game.table {
-  /* .app がセーフエリア分の余白を持つので、その分を引く */
-  height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  min-height: 0;
-  overflow: hidden;
-}
-
 .question-area.table {
   flex: 1;
   min-height: 0;

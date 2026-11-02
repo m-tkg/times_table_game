@@ -212,7 +212,7 @@ function GameView({ config }: { config: GameConfig }) {
   const questionLine = (
     <div
       key={state.flash?.id ?? 0}
-      className={`question num ${isTable ? 'small' : ''} ${state.flash ? (state.flash.kind === 'correct' ? 'flash-correct' : 'flash-wrong') : ''}`}
+      className={`question num ${isTable ? 'small' : ''} ${state.question.kind === 'factor' ? 'factor' : ''} ${state.flash ? (state.flash.kind === 'correct' ? 'flash-correct' : 'flash-wrong') : ''}`}
     >
       <QuestionView
         question={state.question}
@@ -256,10 +256,9 @@ function GameView({ config }: { config: GameConfig }) {
             {state.streak >= 3 && <div className="combo num">COMBO ×{state.streak}</div>}
           </div>
         )}
+        {/* 正誤の表示は問題の領域に重ねる（テンキーを押し下げない）。表うめは表のマスが緑になるので出さない */}
+        {state.phase === 'feedback' && state.feedback && !isTable && <FeedbackBanner state={state} />}
       </div>
-
-      {/* 表うめは表のマスが緑になるのでバナーは出さない */}
-      {state.phase === 'feedback' && state.feedback && !isTable && <FeedbackBanner state={state} />}
 
       {state.choices ? (
         <div className={`choices ${isTable ? 'compact' : ''}`}>
