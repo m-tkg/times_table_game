@@ -43,6 +43,12 @@ export interface Flash {
   id: number;
 }
 
+/** 正誤とは別の、答え直しを促すお知らせ。id が変わるたびに表示し直す */
+export interface Notice {
+  kind: 'outOfRange';
+  id: number;
+}
+
 export interface GameState {
   config: GameConfig;
   playId: string;
@@ -76,6 +82,8 @@ export interface GameState {
 
   feedback: Feedback | null;
   flash: Flash | null;
+  /** 逆算で範囲外の組を答えたときのお知らせ（不正解にはしない） */
+  notice: Notice | null;
   records: AnswerRecord[];
   wrongRecords: AnswerRecord[];
   rngState: number;

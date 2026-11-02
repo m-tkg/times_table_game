@@ -55,6 +55,7 @@ export function createGame(config: GameConfig, { seed, now, playId }: CreateOpti
     survivalLimitMs: survivalInitialLimit(settings.difficulty),
     feedback: null,
     flash: null,
+    notice: null,
     records: [],
     wrongRecords: [],
     rngState: rng.state,

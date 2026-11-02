@@ -169,6 +169,55 @@ describe('正解演出', () => {
   });
 });
 
+describe('逆算で範囲外の組を答えたとき', () => {
+  // 超上級は両方 10〜19。1 × 積 は積が合っていても範囲外
+  const outOfRange = (state: GameState): Answer => {
+    if (state.question.kind !== 'factor') throw new Error('逆算ではない');
+    return [1, state.question.product];
+  };
+  const factor = (rule: NormalSettings['rule']) => normal({ rule, format: 'factor', difficulty: 'expert' });
+
+  it.each(['timeAttack', 'timed60', 'survival'] as const)('%s: 不正解にせず、同じ問題のまま答え直せる（ペナルティなし）', (rule) => {
+    let s = right(start(factor(rule)), 1000);
+    const before = s;
+    s = answer(s, outOfRange(s), 2500);
+    expect(s.phase).toBe('playing');
+    expect(s.questionNumber).toBe(before.questionNumber);
+    expect(s.question).toEqual(before.question);
+    expect(s.penaltyMs).toBe(0);
+    expect(s.lives).toBe(before.lives);
+    expect(s.streak).toBe(1);
+    expect(s.answeredCount).toBe(before.answeredCount);
+    expect(s.records).toEqual(before.records);
+    expect(s.firstWrongAnswer).toBeNull();
+    expect(s.notice).toEqual({ kind: 'outOfRange', id: 1 });
+  });
+
+  it('答え直して正解すれば、一発正解として記録し、お知らせは消える', () => {
+    let s = start(factor('timeAttack'));
+    s = answer(s, outOfRange(s), 1000);
+    s = answer(s, rightAnswer(s), 1500);
+    expect(s.notice).toBeNull();
+    expect(s.records.at(-1)?.correct).toBe(true);
+    expect(s.records.at(-1)?.responseMs).toBe(1500);
+  });
+
+  it('続けて範囲外を答えるたびに id が変わる（表示し直す合図）', () => {
+    let s = start(factor('timeAttack'));
+    s = answer(s, outOfRange(s), 1000);
+    s = answer(s, outOfRange(s), 1200);
+    expect(s.notice?.id).toBe(2);
+  });
+
+  it('積が違う答えは、これまでどおり誤答', () => {
+    let s = start(factor('timeAttack'));
+    const product = s.question.kind === 'factor' ? s.question.product : 0;
+    s = answer(s, product === 100 ? [10, 11] : [10, 10], 1000);
+    expect(s.penaltyMs).toBe(3000);
+    expect(s.notice).toBeNull();
+  });
+});
+
 describe('60 秒チャレンジ', () => {
   const config = normal({ rule: 'timed60' });
 
