@@ -17,6 +17,11 @@ describe('shouldMoveToRight（逆算で左の欄を打ち終えたか）', () =>
     expect(shouldMoveToRight('expert', '12')).toBe(true);
   });
 
+  it('超上級: 範囲外の 1 桁（2〜9）は自動では移らず、2 桁目を待つ（範囲外の組も入力できる）', () => {
+    expect(shouldMoveToRight('expert', '7')).toBe(false);
+    expect(shouldMoveToRight('expert', '24')).toBe(true);
+  });
+
   it('空なら移らない', () => {
     expect(shouldMoveToRight('standard', '')).toBe(false);
   });
