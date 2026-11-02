@@ -48,14 +48,14 @@ export function settingsLabel(s: NormalSettings): string {
   return [RULE_LABEL[s.rule], FORMAT_LABEL[s.format], METHOD_LABEL[s.method], DIFFICULTY_LABEL[s.difficulty]].join(' ・ ');
 }
 
-export function tableLabel(difficulty: NormalSettings['difficulty'], count: TableCount): string {
-  return `表うめ ・ ${DIFFICULTY_LABEL[difficulty]} ・ ${count === 'all' ? '全部' : `${count} マス`}`;
+export function tableLabel(difficulty: NormalSettings['difficulty'], count: TableCount, method: AnswerMethod): string {
+  return `表うめ ・ ${DIFFICULTY_LABEL[difficulty]} ・ ${count === 'all' ? '全部' : `${count} マス`} ・ ${METHOD_LABEL[method]}`;
 }
 
 /** プレイ記録の表示名 */
 export function playLabel(p: PlayRecord): string {
   if (p.mode === 'daily') return 'デイリー';
-  if (p.mode === 'table') return tableLabel(p.settings.difficulty, p.tableCount ?? 20);
+  if (p.mode === 'table') return tableLabel(p.settings.difficulty, p.tableCount ?? 20, p.settings.method);
   return settingsLabel(p.settings);
 }
 

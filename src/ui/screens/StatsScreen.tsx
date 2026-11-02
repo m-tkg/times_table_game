@@ -7,7 +7,7 @@ import { cellKey, heatmapAxes } from '../../domain/range.ts';
 import { DEFAULT_SETTINGS, settingsKey, type NormalSettings, type PlayRecord, type TableCount } from '../../domain/records.ts';
 import { accuracyOf, compareResults } from '../../domain/score.ts';
 import { combinedCellStats, localDateKey, streakDays, type CellStats } from '../../domain/stats.ts';
-import type { Difficulty, Rule } from '../../domain/types.ts';
+import type { AnswerMethod, Difficulty, Rule } from '../../domain/types.ts';
 import { bestKeyOf, tableBestKey } from '../../storage/repository.ts';
 import { Segmented } from '../Segmented.tsx';
 import { TopBar } from '../TopBar.tsx';
@@ -86,11 +86,14 @@ function scoreText(rule: Rule, score: number): string {
   return `${s.value} ${s.unit}`;
 }
 
-type Target = { kind: 'normal'; settings: NormalSettings } | { kind: 'daily' } | { kind: 'table'; difficulty: Difficulty; count: TableCount };
+type Target =
+  | { kind: 'normal'; settings: NormalSettings }
+  | { kind: 'daily' }
+  | { kind: 'table'; difficulty: Difficulty; count: TableCount; method: AnswerMethod };
 
 function targetKey(t: Target): string {
   if (t.kind === 'daily') return 'daily';
-  if (t.kind === 'table') return tableBestKey(t.difficulty, t.count);
+  if (t.kind === 'table') return tableBestKey(t.difficulty, t.count, t.method);
   return settingsKey(t.settings);
 }
 
@@ -109,7 +112,7 @@ function TargetFilter({ value, onChange, withDaily }: { value: Target; onChange(
   const switchKind = (kind: Target['kind']) => {
     if (kind === value.kind) return;
     if (kind === 'daily') onChange({ kind: 'daily' });
-    else if (kind === 'table') onChange({ kind: 'table', ...(repo.loadTableSettings() ?? { difficulty: 'standard', count: 20 }) });
+    else if (kind === 'table') onChange({ kind: 'table', ...(repo.loadTableSettings() ?? { difficulty: 'standard', count: 20, method: 'input' }) });
     else onChange({ kind: 'normal', settings: repo.loadLastSettings() ?? DEFAULT_SETTINGS });
   };
   return (
@@ -128,6 +131,7 @@ function TargetFilter({ value, onChange, withDaily }: { value: Target; onChange(
             ]}
             onChange={(count) => onChange({ ...value, count })}
           />
+          <Segmented<AnswerMethod> label="回答方法" value={value.method} options={METHOD_OPTIONS} onChange={(method) => onChange({ ...value, method })} />
         </div>
       )}
     </>

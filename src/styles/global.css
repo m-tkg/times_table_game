@@ -1079,3 +1079,19 @@ button.list-row {
   background: var(--surface-2);
   box-shadow: none;
 }
+
+.table-grid .cell.reveal {
+  background: color-mix(in srgb, var(--wrong) 25%, var(--surface));
+  color: var(--wrong);
+  outline: 2px solid var(--wrong);
+}
+
+.choices.compact {
+  gap: 10px;
+  padding: 10px 14px 16px;
+}
+
+.choices.compact .choice {
+  height: 64px;
+  font-size: 28px;
+}

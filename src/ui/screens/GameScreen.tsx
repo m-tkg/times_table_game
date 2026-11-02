@@ -241,6 +241,7 @@ function GameView({ config }: { config: GameConfig }) {
               current={state.question.kind === 'product' ? [state.question.a, state.question.b] : null}
               justSolved={correctSlots !== null}
               justSolvedValue={typeof state.feedback?.answer === 'number' ? state.feedback.answer : null}
+              revealed={state.phase === 'feedback' && state.feedback?.correct === false}
             />
             {questionLine}
           </>
@@ -256,7 +257,7 @@ function GameView({ config }: { config: GameConfig }) {
       {state.phase === 'feedback' && state.feedback && !isTable && <FeedbackBanner state={state} />}
 
       {state.choices ? (
-        <div className="choices">
+        <div className={`choices ${isTable ? 'compact' : ''}`}>
           {state.choices.map((c, i) => {
             const fb = state.phase === 'feedback' ? state.feedback : null;
             const isRight = fb !== null && judge(state.question, c, state.questionDifficulty).correct;

@@ -52,7 +52,7 @@ export function ResultScreen() {
         : config.mode === 'practice'
           ? '練習'
           : config.mode === 'table'
-            ? tableLabel(config.difficulty, config.count)
+            ? tableLabel(config.difficulty, config.count, config.method)
             : settingsLabel(settings);
 
   return (

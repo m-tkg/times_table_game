@@ -13,12 +13,14 @@ export interface TableGridProps {
   justSolved?: boolean;
   /** 正解演出中に表示する値 */
   justSolvedValue?: number | null;
+  /** いまのマスで間違え、正答を見せているか（4 択） */
+  revealed?: boolean;
 }
 
 const keyOf = (a: number, b: number) => `${a}x${b}`;
 
 /** 表うめの九九表。埋まったマスは数字を残し、一度間違えたマスには印をつける */
-export function TableGrid({ difficulty, records, current, justSolved = false, justSolvedValue = null }: TableGridProps) {
+export function TableGrid({ difficulty, records, current, justSolved = false, justSolvedValue = null, revealed = false }: TableGridProps) {
   const { rows, cols } = heatmapAxes(difficulty);
   const solved = new Map<string, boolean>();
   for (const r of records) {
@@ -44,6 +46,13 @@ export function TableGrid({ difficulty, records, current, justSolved = false, ju
             const key = keyOf(r, c);
             const isCurrent = key === currentKey;
             const firstTry = solved.get(key);
+            if (isCurrent && revealed) {
+              return (
+                <span key={key} className="cell reveal" aria-current="true" aria-label={`${r} × ${c} = ${r * c}（正解）`}>
+                  {r * c}
+                </span>
+              );
+            }
             if (isCurrent) {
               return (
                 <span key={key} className={`cell ${justSolved ? 'just' : 'current'}`} aria-current="true" aria-label={`${r} × ${c}`}>
