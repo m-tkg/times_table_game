@@ -164,6 +164,12 @@ describe('Repository', () => {
     expect(repo.loadAchievements()).toEqual({ 'first-play': 100, 'streak-7': 200 });
   });
 
+  it('表うめの前回の設定を保存して読み戻せる', () => {
+    expect(repo.loadTableSettings()).toBeNull();
+    repo.saveTableSettings({ difficulty: 'advanced', count: 'all' });
+    expect(new Repository(store).loadTableSettings()).toEqual({ difficulty: 'advanced', count: 'all' });
+  });
+
   it('カウンタを加算して読み戻せる（苦手克服の完了回数など）', () => {
     expect(repo.loadCounters()).toEqual({ weaknessCompleted: 0 });
     repo.incrementCounter('weaknessCompleted');
