@@ -142,7 +142,7 @@ function settingsOf(config: GameConfig): NormalSettings {
     case 'weakness':
       return { rule: 'timeAttack', format: 'mix', method: config.method, difficulty: config.difficulty };
     case 'table':
-      return { rule: 'timeAttack', format: 'product', method: 'input', difficulty: config.difficulty };
+      return { rule: 'timeAttack', format: 'product', method: config.method, difficulty: config.difficulty };
     case 'practice':
       return {
         rule: 'timeAttack',

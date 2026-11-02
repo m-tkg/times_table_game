@@ -29,6 +29,7 @@ export interface PracticeSettings {
 export interface TableSettings {
   difficulty: NormalSettings['difficulty'];
   count: TableCount;
+  method: AnswerMethod;
 }
 
 export interface WeaknessSettings {
@@ -59,13 +60,13 @@ const MAX_PLAYS = 3000;
 /** ベスト記録のキー。デイリーは通常モードと分けて 'daily' にまとめる */
 export function bestKeyOf(play: Pick<PlayRecord, 'mode' | 'settings' | 'tableCount'>): string {
   if (play.mode === 'daily') return 'daily';
-  if (play.mode === 'table') return tableBestKey(play.settings.difficulty, play.tableCount ?? 20);
+  if (play.mode === 'table') return tableBestKey(play.settings.difficulty, play.tableCount ?? 20, play.settings.method);
   return settingsKey(play.settings);
 }
 
-/** 表うめのベスト記録のキー（難易度 × マス数） */
-export function tableBestKey(difficulty: NormalSettings['difficulty'], count: TableCount): string {
-  return `table/${difficulty}/${count}`;
+/** 表うめのベスト記録のキー（難易度 × マス数 × 回答方法） */
+export function tableBestKey(difficulty: NormalSettings['difficulty'], count: TableCount, method: AnswerMethod): string {
+  return `table/${difficulty}/${count}/${method}`;
 }
 
 export interface Counters {
@@ -121,8 +122,11 @@ export class Repository {
   }
 
   loadTableSettings(): TableSettings | null {
-    const v = this.read<TableSettings | null>(KEYS.table, null);
-    return isObject(v) ? v : null;
+    const v = this.read<Partial<TableSettings> | null>(KEYS.table, null);
+    if (!isObject(v)) return null;
+    const saved = v as Partial<TableSettings>;
+    // 回答方法がない（4 択対応前の）保存データは入力として扱う
+    return { difficulty: saved.difficulty ?? 'standard', count: saved.count ?? 20, method: saved.method ?? 'input' };
   }
 
   loadWeaknessSettings(): WeaknessSettings | null {
