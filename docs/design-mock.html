@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KUKU デザインモック</title>
+<style>
+  :root {
+    --font: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Segoe UI", sans-serif;
+  }
+  .light {
+    --bg: #fff8f0; --surface: #ffffff; --surface-2: #fff1e3; --text: #1f2333; --muted: #6b7080; --line: #f0e2d2;
+    --primary: #ff6b4a; --primary-ink: #ffffff; --secondary: #13b5a6; --accent: #ffc23d; --info: #5b6cff;
+    --correct: #1faf6e; --wrong: #e5484d; --shadow: 0 4px 0 #f0d9c4;
+  }
+  .dark {
+    --bg: #161923; --surface: #20242f; --surface-2: #2a2f3c; --text: #eef0f5; --muted: #9aa0b0; --line: #313646;
+    --primary: #f07a5f; --primary-ink: #1b1d24; --secondary: #3bc2b4; --accent: #e8b54a; --info: #7c89f5;
+    --correct: #3cc488; --wrong: #f06a6e; --shadow: 0 4px 0 #0d0f15;
+  }
+  body { margin: 0; padding: 32px; background: #e9e6e2; font-family: var(--font); }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.lead { margin: 0 0 24px; color: #555; }
+  .row { display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; }
+  .label { font-size: 13px; color: #555; margin: 0 0 8px; }
+  .phone {
+    width: 360px; height: 740px; border-radius: 36px; overflow: hidden; background: var(--bg); color: var(--text);
+    box-shadow: 0 20px 50px rgba(0,0,0,.18); display: flex; flex-direction: column; position: relative;
+  }
+  .top { display: flex; align-items: center; justify-content: space-between; padding: 22px 20px 8px; }
+  .logo { font-weight: 900; font-size: 22px; letter-spacing: .08em; }
+  .logo span { color: var(--primary); }
+  .chip { background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; box-shadow: var(--shadow); }
+  .chip b { color: var(--primary); }
+  .content { padding: 8px 20px 20px; display: flex; flex-direction: column; gap: 14px; flex: 1; }
+  .card { background: var(--surface); border-radius: 20px; padding: 16px; box-shadow: var(--shadow); }
+  .hero {
+    background: var(--primary); color: var(--primary-ink); border-radius: 24px; padding: 20px; box-shadow: 0 5px 0 color-mix(in srgb, var(--primary) 70%, #000);
+  }
+  .hero small { opacity: .85; font-weight: 700; }
+  .hero .big { font-size: 26px; font-weight: 900; margin: 6px 0 2px; }
+  .hero .sub { font-size: 13px; opacity: .9; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .tile { background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); font-weight: 800; }
+  .tile .ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #fff; font-size: 18px; margin-bottom: 8px; }
+  .tile small { display: block; color: var(--muted); font-weight: 600; font-size: 12px; margin-top: 2px; }
+  .daily { display: flex; align-items: center; gap: 12px; }
+  .daily .badge { background: var(--accent); color: #3a2a00; border-radius: 12px; font-weight: 900; padding: 8px 10px; font-size: 13px; }
+  .num { font-variant-numeric: tabular-nums; }
+  /* game */
+  .hud { display: flex; justify-content: space-between; align-items: center; padding: 20px 20px 4px; font-weight: 800; }
+  .progress { height: 10px; border-radius: 999px; background: var(--surface-2); margin: 6px 20px 0; overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 35%; background: var(--secondary); border-radius: 999px; }
+  .question { flex: 1; display: grid; place-items: center; text-align: center; }
+  .question .q { font-size: 56px; font-weight: 900; letter-spacing: .02em; }
+  .question .q .blank { display: inline-block; min-width: 1.4em; border-bottom: 6px solid var(--primary); color: var(--primary); }
+  .combo { display: inline-block; margin-top: 10px; background: var(--accent); color: #3a2a00; font-weight: 900; border-radius: 999px; padding: 4px 12px; font-size: 14px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 12px 16px 24px; }
+  .key {
+    height: 60px; border-radius: 16px; background: var(--surface); box-shadow: var(--shadow); display: grid; place-items: center;
+    font-size: 26px; font-weight: 800;
+  }
+  .key.ok { background: var(--secondary); color: #fff; font-size: 18px; }
+  .key.del { color: var(--muted); font-size: 18px; }
+  .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px 16px 28px; }
+  .choice { height: 84px; border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); display: grid; place-items: center; font-size: 34px; font-weight: 900; position: relative; }
+  .choice small { position: absolute; top: 8px; left: 12px; font-size: 12px; color: var(--muted); font-weight: 700; }
+  .choice.wrong { outline: 4px solid var(--wrong); }
+  .choice.right { background: var(--correct); color: #fff; }
+  .feedback { margin: 0 20px; border-radius: 16px; padding: 12px 14px; background: color-mix(in srgb, var(--wrong) 16%, var(--surface)); font-weight: 800; display: flex; gap: 10px; align-items: center; }
+  .feedback .mark { width: 28px; height: 28px; border-radius: 50%; background: var(--wrong); color: #fff; display: grid; place-items: center; }
+  .lives { color: var(--wrong); letter-spacing: 2px; }
+  /* result */
+  .result-head { text-align: center; padding: 28px 20px 8px; }
+  .newrec { display: inline-block; background: var(--accent); color: #3a2a00; font-weight: 900; border-radius: 999px; padding: 6px 14px; transform: rotate(-3deg); }
+  .score { font-size: 64px; font-weight: 900; margin: 10px 0 0; }
+  .score small { font-size: 22px; color: var(--muted); }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .stat { background: var(--surface); border-radius: 16px; padding: 10px; text-align: center; box-shadow: var(--shadow); }
+  .stat b { display: block; font-size: 20px; }
+  .stat small { color: var(--muted); font-size: 11px; font-weight: 700; }
+  .stat .up { color: var(--correct); }
+  .miss { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--line); font-weight: 700; }
+  .miss:last-child { border: 0; }
+  .miss .x { color: var(--wrong); }
+  .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .btn { border-radius: 16px; padding: 14px; text-align: center; font-weight: 900; box-shadow: var(--shadow); background: var(--surface); }
+  .btn.primary { background: var(--primary); color: var(--primary-ink); box-shadow: 0 4px 0 color-mix(in srgb, var(--primary) 70%, #000); }
+  .swatches { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .sw { width: 92px; border-radius: 12px; overflow: hidden; font-size: 11px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+  .sw i { display: block; height: 40px; }
+  .sw span { display: block; padding: 4px 6px; }
+</style>
+</head>
+<body>
+<h1>KUKU デザインモック</h1>
+<p class="lead">フラット・ポップ（落ち着き寄り）。キャラクターなし。数字は等幅で大きく。下に影を落としたボタンで「押せる」感を出す。</p>
+
+<div class="row">
+  <!-- ホーム（ライト） -->
+  <div>
+    <p class="label">ホーム（ライト）</p>
+    <div class="phone light">
+      <div class="top"><div class="logo">KU<span>KU</span></div><div class="chip">🔥 <b class="num">5</b> 日連続</div></div>
+      <div class="content">
+        <div class="hero">
+          <small>前回と同じ設定で開始</small>
+          <div class="big">▶ スタート</div>
+          <div class="sub">タイムアタック ・ ミックス ・ 入力 ・ 標準</div>
+          <div class="sub num" style="margin-top:6px">ベスト 32.4 秒</div>
+        </div>
+        <div class="card daily">
+          <div class="badge">DAILY</div>
+          <div style="flex:1"><b>デイリーチャレンジ</b><div style="color:var(--muted);font-size:13px">11/2 ・ 未挑戦</div></div>
+          <div style="font-weight:900;color:var(--primary)">›</div>
+        </div>
+        <div class="grid2">
+          <div class="tile"><div class="ico" style="background:var(--info)">⚙</div>設定を変えて開始<small>72 通りの組み合わせ</small></div>
+          <div class="tile"><div class="ico" style="background:var(--wrong)">◎</div>苦手克服<small>苦手な 20 問</small></div>
+          <div class="tile"><div class="ico" style="background:var(--secondary)">✎</div>練習<small>段を選んで</small></div>
+          <div class="tile"><div class="ico" style="background:var(--accent)">★</div>成績・実績<small>12 / 20 獲得</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ゲーム・入力（ライト） -->
+  <div>
+    <p class="label">ゲーム・入力（ライト）</p>
+    <div class="phone light">
+      <div class="hud"><span>⏸</span><span class="num">7 / 20</span><span class="num">12.8s</span></div>
+      <div class="progress"><i></i></div>
+      <div class="question">
+        <div>
+          <div class="q num">7 × <span class="blank">8</span> = 56</div>
+          <div class="combo">COMBO ×6</div>
+        </div>
+      </div>
+      <div class="pad">
+        <div class="key num">7</div><div class="key num">8</div><div class="key num">9</div>
+        <div class="key num">4</div><div class="key num">5</div><div class="key num">6</div>
+        <div class="key num">1</div><div class="key num">2</div><div class="key num">3</div>
+        <div class="key del">⌫</div><div class="key num">0</div><div class="key ok">決定</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ゲーム・4択（ダーク） -->
+  <div>
+    <p class="label">ゲーム・4 択 / サバイバル（ダーク、不正解時）</p>
+    <div class="phone dark">
+      <div class="hud"><span>⏸</span><span class="lives">♥♥♡</span><span class="num">18 問</span></div>
+      <div class="progress"><i style="width:60%;background:var(--accent)"></i></div>
+      <div class="question"><div class="q num">24 = ? × ?</div></div>
+      <div class="feedback"><div class="mark">✕</div><div>正解: <span class="num">3×8, 4×6, 6×4, 8×3</span></div></div>
+      <div class="choices">
+        <div class="choice num wrong"><small>1</small>4×7</div>
+        <div class="choice num right"><small>2</small>3×8</div>
+        <div class="choice num"><small>3</small>5×5</div>
+        <div class="choice num"><small>4</small>3×7</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 結果（ダーク） -->
+  <div>
+    <p class="label">結果（ダーク）</p>
+    <div class="phone dark">
+      <div class="result-head">
+        <div class="newrec">NEW RECORD!</div>
+        <div class="score num">31.2<small>秒</small></div>
+        <div style="color:var(--muted);font-weight:700">タイムアタック ・ ミックス ・ 入力 ・ 標準</div>
+      </div>
+      <div class="content">
+        <div class="stats">
+          <div class="stat"><b class="num">95%</b><small>正答率</small></div>
+          <div class="stat"><b class="num up">−1.2s</b><small>ベスト比</small></div>
+          <div class="stat"><b class="num up">−3.5s</b><small>前回比</small></div>
+        </div>
+        <div class="card">
+          <b>間違えた問題</b>
+          <div class="miss num"><span>7 × 8</span><span><span class="x">54</span> → 56</span></div>
+          <div class="miss num"><span>? × 9 = 54</span><span><span class="x">7</span> → 6</span></div>
+        </div>
+        <div class="card" style="display:flex;gap:10px;align-items:center"><span style="font-size:22px">🏅</span><div><b>実績獲得</b><div style="color:var(--muted);font-size:13px">タイムアタック 35 秒切り</div></div></div>
+        <div class="btns"><div class="btn">ホーム</div><div class="btn primary">もう一度</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="swatches">
+  <div class="sw"><i style="background:#ff6b4a"></i><span>primary #ff6b4a</span></div>
+  <div class="sw"><i style="background:#13b5a6"></i><span>secondary #13b5a6</span></div>
+  <div class="sw"><i style="background:#ffc23d"></i><span>accent #ffc23d</span></div>
+  <div class="sw"><i style="background:#5b6cff"></i><span>info #5b6cff</span></div>
+  <div class="sw"><i style="background:#1faf6e"></i><span>correct #1faf6e</span></div>
+  <div class="sw"><i style="background:#e5484d"></i><span>wrong #e5484d</span></div>
+  <div class="sw"><i style="background:#fff8f0"></i><span>bg light #fff8f0</span></div>
+  <div class="sw"><i style="background:#161923"></i><span>bg dark #161923</span></div>
+</div>
+</body>
+</html>
