@@ -478,7 +478,8 @@ a {
   border-bottom-color: var(--correct);
 }
 
-.slot.empty {
+/* 未入力の欄。成績画面の .empty（記録なしの表示）と衝突しないよう別の名前にする */
+.slot.unfilled {
   color: var(--muted);
 }
 

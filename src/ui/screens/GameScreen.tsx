@@ -438,7 +438,7 @@ function Hud({
 function Slot({ value, active, correct, onClick }: { value: string; active: boolean; correct?: boolean; onClick?: () => void }) {
   return (
     <span
-      className={`slot ${correct ? 'correct' : active ? 'active' : ''} ${value === '' ? 'empty' : ''}`}
+      className={`slot ${correct ? 'correct' : active ? 'active' : ''} ${value === '' ? 'unfilled' : ''}`}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
     >
@@ -464,7 +464,7 @@ function QuestionView({
     slots ? (
       <Slot value={slots[i]} active={!correct && activeSlot === i} correct={correct} onClick={correct ? undefined : () => onSlot(i)} />
     ) : (
-      <span className="slot empty">?</span>
+      <span className="slot unfilled">?</span>
     );
   switch (question.kind) {
     case 'product':
