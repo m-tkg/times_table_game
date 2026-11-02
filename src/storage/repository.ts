@@ -26,6 +26,11 @@ export interface PracticeSettings {
   method: AnswerMethod;
 }
 
+export interface TableSettings {
+  difficulty: NormalSettings['difficulty'];
+  count: TableCount;
+}
+
 export interface WeaknessSettings {
   difficulty: NormalSettings['difficulty'];
   method: AnswerMethod;
@@ -37,6 +42,7 @@ const KEYS = {
   lastSettings: 'kuku:lastSettings',
   practice: 'kuku:practice',
   weakness: 'kuku:weakness',
+  table: 'kuku:table',
   answers: 'kuku:answers',
   cellStats: 'kuku:cellStats',
   plays: 'kuku:plays',
@@ -114,6 +120,11 @@ export class Repository {
     return isObject(v) ? v : null;
   }
 
+  loadTableSettings(): TableSettings | null {
+    const v = this.read<TableSettings | null>(KEYS.table, null);
+    return isObject(v) ? v : null;
+  }
+
   loadWeaknessSettings(): WeaknessSettings | null {
     const v = this.read<WeaknessSettings | null>(KEYS.weakness, null);
     return isObject(v) ? v : null;
@@ -172,6 +183,10 @@ export class Repository {
 
   savePracticeSettings(settings: PracticeSettings): boolean {
     return this.write(KEYS.practice, settings);
+  }
+
+  saveTableSettings(settings: TableSettings): boolean {
+    return this.write(KEYS.table, settings);
   }
 
   saveWeaknessSettings(settings: WeaknessSettings): boolean {
