@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { correctAnswerOf, judge } from '../domain/question.ts';
 import type { NormalSettings } from '../domain/records.ts';
 import type { Answer } from '../domain/types.ts';
-import { CORRECT_FEEDBACK_MS, createGame, gameClockMs, gameReducer, isRecordable, questionRemainingMs, summaryOf, timeRemainingMs } from './engine.ts';
+import { CORRECT_FEEDBACK_MS, TABLE_CORRECT_FEEDBACK_MS, createGame, gameClockMs, gameReducer, isRecordable, questionRemainingMs, summaryOf, timeRemainingMs } from './engine.ts';
 import type { GameConfig, GameState } from './types.ts';
 
 const AT = Date.UTC(2026, 10, 2, 10);
@@ -410,5 +410,87 @@ describe('1 問ごとの記録', () => {
       correct: true,
       responseMs: 1500,
     });
+  });
+});
+
+describe('表うめモード', () => {
+  const table = (difficulty: 'standard' | 'advanced' | 'expert', count: 20 | 'all'): GameConfig => ({ mode: 'table', difficulty, count });
+  const keyOf = (s: GameState) => {
+    const q = s.question as { a: number; b: number };
+    return `${q.a}x${q.b}`;
+  };
+
+  it.each([
+    ['standard', 81],
+    ['advanced', 90],
+    ['expert', 100],
+  ] as const)('%s の「全部」は表の全マス（%i）を重複なく出題順に持つ', (difficulty, cells) => {
+    const s = start(table(difficulty, 'all'));
+    expect(s.tableOrder).toHaveLength(cells);
+    expect(new Set(s.tableOrder!.map(([a, b]) => `${a}x${b}`)).size).toBe(cells);
+  });
+
+  it('上級の表は 行 10〜19 × 列 1〜9 で、問題は行 × 列の向きで出す', () => {
+    const s = start(table('advanced', 'all'));
+    for (const [a, b] of s.tableOrder!) {
+      expect(a).toBeGreaterThanOrEqual(10);
+      expect(b).toBeLessThanOrEqual(9);
+    }
+    const q = s.question as { a: number; b: number };
+    expect(q.a).toBeGreaterThanOrEqual(10);
+  });
+
+  it('20 マスは表の中から 20 マスを選ぶ', () => {
+    const s = start(table('standard', 20));
+    expect(s.tableOrder).toHaveLength(20);
+  });
+
+  it('問題は出題順どおり、答えを出す形式・入力で出す', () => {
+    let s = start(table('standard', 20));
+    const order = s.tableOrder!.map(([a, b]) => `${a}x${b}`);
+    expect(s.question.kind).toBe('product');
+    expect(s.choices).toBeNull();
+    for (let i = 0; i < 3; i++) {
+      expect(keyOf(s)).toBe(order[i]);
+      s = tick(answer(s, rightAnswer(s), at(i)), at(i) + TABLE_CORRECT_FEEDBACK_MS);
+    }
+  });
+
+  it('正解演出は 0.5 秒で、演出中はタイマーが止まる', () => {
+    let s = start(table('standard', 20));
+    s = answer(s, rightAnswer(s), 1000);
+    expect(s.feedback?.correct).toBe(true);
+    expect(gameClockMs(s, 1400)).toBe(1000);
+    s = tick(s, 1000 + TABLE_CORRECT_FEEDBACK_MS - 1);
+    expect(s.phase).toBe('feedback');
+    s = tick(s, 1000 + TABLE_CORRECT_FEEDBACK_MS);
+    expect(s.questionNumber).toBe(2);
+  });
+
+  it('誤答は同じマスのまま +3 秒、正答は見せない', () => {
+    let s = start(table('standard', 20));
+    const key = keyOf(s);
+    s = answer(s, wrongAnswer(s), 1000);
+    expect(s.phase).toBe('playing');
+    expect(keyOf(s)).toBe(key);
+    expect(s.penaltyMs).toBe(3000);
+    expect(s.feedback).toBeNull();
+  });
+
+  it('全マス埋めると終了し、スコアはペナルティ込みの時間、記録対象になる', () => {
+    let s = start(table('standard', 20));
+    for (let i = 0; i < 20; i++) {
+      if (i === 0) s = answer(s, wrongAnswer(s), 500);
+      s = tick(answer(s, rightAnswer(s), at(i)), at(i) + TABLE_CORRECT_FEEDBACK_MS);
+    }
+    expect(s.phase).toBe('finished');
+    expect(summaryOf(s)).toEqual({ correctCount: 19, answeredCount: 20, totalMs: 20_000 + 3000 });
+    expect(isRecordable(s)).toBe(true);
+    expect(s.records[0]?.mode).toBe('table');
+  });
+
+  it('表示用の設定はタイムアタック・答えを出す・入力', () => {
+    const s = start(table('expert', 20));
+    expect(s.settings).toEqual({ rule: 'timeAttack', format: 'product', method: 'input', difficulty: 'expert' });
   });
 });

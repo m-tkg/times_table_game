@@ -1,6 +1,6 @@
 import type { CorrectAnswer } from '../domain/question.ts';
-import type { AnswerRecord, NormalSettings } from '../domain/records.ts';
-import type { Answer, AnswerMethod, Difficulty, Question } from '../domain/types.ts';
+import type { AnswerRecord, NormalSettings, TableCount } from '../domain/records.ts';
+import type { Answer, AnswerMethod, Difficulty, Pair, Question } from '../domain/types.ts';
 
 export type PracticeFormat = 'product' | 'blank' | 'mix';
 
@@ -10,6 +10,8 @@ export type GameConfig =
   | { mode: 'daily'; date: string }
   /** keys は苦手度で選んだ組み合わせ（cellKey）を出題順に並べたもの */
   | { mode: 'weakness'; difficulty: Difficulty; method: AnswerMethod; keys: string[] }
+  /** 表うめ: 九九表の空きマスをランダムな順に埋める */
+  | { mode: 'table'; difficulty: Difficulty; count: TableCount }
   | {
       mode: 'practice';
       tables: number[];
@@ -78,6 +80,8 @@ export interface GameState {
   wrongRecords: AnswerRecord[];
   rngState: number;
   aborted: boolean;
+  /** 表うめの出題順（表の行・列の組）。他のモードでは null */
+  tableOrder: Pair[] | null;
 }
 
 export type GameAction =

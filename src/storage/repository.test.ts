@@ -106,6 +106,18 @@ describe('Repository', () => {
       expect(repo.loadBests()['timeAttack/product/input/standard']?.id).toBe('c');
     });
 
+    it('表うめのベスト記録は「難易度 × マス数」ごとに分かれ、通常モードとは別', () => {
+      const tablePlay = (id: string, count: 20 | 'all', score: number) =>
+        play({ id, mode: 'table', tableCount: count, totalMs: score, score });
+      repo.saveGameResult({ records: [], play: play() });
+      expect(repo.saveGameResult({ records: [], play: tablePlay('t1', 20, 50_000) }).isNewBest).toBe(true);
+      expect(repo.saveGameResult({ records: [], play: tablePlay('t2', 'all', 90_000) }).isNewBest).toBe(true);
+      const bests = repo.loadBests();
+      expect(bests['table/standard/20']?.id).toBe('t1');
+      expect(bests['table/standard/all']?.id).toBe('t2');
+      expect(bests['timeAttack/product/input/standard']?.id).toBe('p1');
+    });
+
     it('ベスト記録は設定ごとに分かれる', () => {
       repo.saveGameResult({ records: [], play: play() });
       const other = play({ id: 'x', settings: { rule: 'timeAttack', format: 'product', method: 'choice', difficulty: 'standard' } });

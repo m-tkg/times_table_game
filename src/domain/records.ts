@@ -1,7 +1,11 @@
 import type { Answer, AnswerMethod, Difficulty, FormatSetting, Question, Rule } from './types.ts';
 
 /** プレイの種類。記録対象は normal と daily だけ（SPEC §4） */
-export type PlayMode = 'normal' | 'daily' | 'weakness' | 'practice';
+/** プレイの種類。ベスト記録の対象は normal・daily・table（SPEC §4） */
+export type PlayMode = 'normal' | 'daily' | 'weakness' | 'practice' | 'table';
+
+/** 表うめモードのマス数。'all' は表の全マス */
+export type TableCount = 20 | 'all';
 
 /** 1 問ごとの記録。SPEC §7.1 */
 export interface AnswerRecord {
@@ -31,10 +35,13 @@ export interface PlayRecord {
   id: string;
   /** 終了日時（エポックミリ秒） */
   at: number;
-  mode: 'normal' | 'daily';
+  mode: 'normal' | 'daily' | 'table';
+  /** 表うめはタイムアタック・答えを出す・入力として扱う */
   settings: NormalSettings;
   /** デイリーチャレンジの日付（YYYY-MM-DD） */
   dailyDate?: string;
+  /** 表うめのマス数 */
+  tableCount?: TableCount;
   correctCount: number;
   answeredCount: number;
   totalMs: number;

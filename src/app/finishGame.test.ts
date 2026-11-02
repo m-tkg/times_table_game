@@ -59,6 +59,23 @@ describe('finishGame', () => {
     expect(repo.loadCounters().weaknessCompleted).toBe(1);
   });
 
+  it('表うめはマス数つきで記録し、タイムアタック用の実績は獲得しない', () => {
+    const repo = new Repository(createMemoryStore());
+    let s = createGame({ mode: 'table', difficulty: 'standard', count: 20 }, { seed: 1, now: 0, playId: 't' });
+    for (let i = 0; i < 20; i++) {
+      const c = correctAnswerOf(s.question, s.questionDifficulty);
+      const now = i * 2000 + 1000;
+      s = gameReducer(s, { type: 'answer', answer: c.kind === 'number' ? c.value : 0, now, at: AT + i });
+      s = gameReducer(s, { type: 'tick', now: now + 1000, at: AT + i });
+    }
+    const result = finishGame(repo, s, AT + 100);
+    expect(result.play).toMatchObject({ mode: 'table', tableCount: 20, score: 20_000 });
+    const ids = result.newAchievements.map((a) => a.id);
+    expect(ids).toContain('first-play');
+    expect(ids).not.toContain('ta-perfect');
+    expect(ids).not.toContain('ta-25');
+  });
+
   it('デイリーは日付つきで記録する', () => {
     const repo = new Repository(createMemoryStore());
     const result = finishGame(repo, playThrough({ mode: 'daily', date: '2026-11-02' }, 20), AT);
