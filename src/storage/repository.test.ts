@@ -147,6 +147,13 @@ describe('Repository', () => {
     expect(repo.loadAchievements()).toEqual({ 'first-play': 100, 'streak-7': 200 });
   });
 
+  it('カウンタを加算して読み戻せる（苦手克服の完了回数など）', () => {
+    expect(repo.loadCounters()).toEqual({ weaknessCompleted: 0 });
+    repo.incrementCounter('weaknessCompleted');
+    repo.incrementCounter('weaknessCompleted');
+    expect(new Repository(store).loadCounters()).toEqual({ weaknessCompleted: 2 });
+  });
+
   it('全記録の削除でアプリのキーだけを消す', () => {
     store.setItem('other-app', 'keep');
     repo.saveAppSettings({ sound: true, vibration: true, theme: 'light' });
