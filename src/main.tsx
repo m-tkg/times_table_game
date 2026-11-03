@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
+import { loadAnalytics } from './app/analytics.ts';
 import './styles/global.css';
 
 const root = document.getElementById('root');
@@ -11,3 +12,5 @@ createRoot(root).render(
     <App />
   </StrictMode>,
 );
+
+loadAnalytics();

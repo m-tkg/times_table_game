@@ -24,7 +24,6 @@
 - 正誤判定（○×）形式の問題
 - 全問制覇（81 問すべてを解く）ルール
 - マスコット・キャラクター
-- アクセス解析
 
 ---
 
@@ -364,6 +363,7 @@
 - 公開: GitHub Actions でビルドし GitHub Pages にデプロイする。
   - リポジトリ: `m-tkg/times_table_game`（public）
   - URL: `https://m-tkg.github.io/times_table_game/`（Vite の `base` を `/times_table_game/` にする）
+- アクセス解析: 利用者数の目安を知るため、公開版（本番ビルド）でだけ Cloudflare Web Analytics の JS ビーコンを読み込む。Cookie は使わず、プレイの内容（スコア・回答）は送らない。オフライン時は送られない。
 - 検索エンジンに載せない: `<meta name="robots" content="noindex">`
 - UI の言語は日本語のみ。
 
