@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addDays, compactLog, emptyCellStats, localDateKey, streakDays, type CellStatsMap } from './stats.ts';
+import { addDays, chartMisses, compactLog, emptyCellStats, localDateKey, streakDays, type CellStatsMap } from './stats.ts';
 import type { AnswerRecord } from './records.ts';
 
 const record = (overrides: Partial<AnswerRecord> = {}): AnswerRecord => ({
@@ -80,5 +80,39 @@ describe('compactLog', () => {
     const records = [record({ at: 1, difficulty: 'advanced', question: { kind: 'product', a: 7, b: 14 } }), record({ at: 2 })];
     const result = compactLog(records, emptyCellStats(), 1);
     expect(result.cellStats.advanced['14x7']).toEqual({ count: 1, correct: 1, totalMs: 2000 });
+  });
+});
+
+describe('chartMisses（九九表のヒートマップ）', () => {
+  const stats = (): CellStatsMap => {
+    const map = emptyCellStats();
+    map.standard['7x8'] = { count: 5, correct: 2, totalMs: 0 };
+    map.standard['8x7'] = { count: 1, correct: 1, totalMs: 0 };
+    map.advanced['12x3'] = { count: 4, correct: 0, totalMs: 0 };
+    map.expert['13x17'] = { count: 2, correct: 1, totalMs: 0 };
+    return map;
+  };
+
+  it('マスごとの間違えた回数と最大値（9 × 9 は標準だけ）', () => {
+    const { misses, max } = chartMisses(stats(), 9);
+    expect(misses.get('7x8')).toBe(3);
+    expect(misses.get('8x7')).toBe(0);
+    expect(misses.get('1x1')).toBe(0);
+    expect(misses.size).toBe(81);
+    expect(max).toBe(3);
+  });
+
+  it('19 × 19 は上級・超上級も含め、上級は 12×3 と 3×12 に同じ値を出す', () => {
+    const { misses, max } = chartMisses(stats(), 19);
+    expect(misses.size).toBe(361);
+    expect(misses.get('12x3')).toBe(4);
+    expect(misses.get('3x12')).toBe(4);
+    expect(misses.get('13x17')).toBe(1);
+    expect(misses.get('17x13')).toBe(0);
+    expect(max).toBe(4);
+  });
+
+  it('記録がなければ最大値は 0', () => {
+    expect(chartMisses(emptyCellStats(), 9).max).toBe(0);
   });
 });
