@@ -96,6 +96,17 @@ export function streakDays(playedDays: Iterable<string>, today: string): number 
 }
 
 /** 九九表（1〜size の段）のマスごとの間違えた回数。キーは `${行}x${列}` */
-export function chartMisses(_stats: CellStatsMap, _size: 9 | 19): { misses: Map<string, number>; max: number } {
-  return { misses: new Map(), max: -1 };
+export function chartMisses(stats: CellStatsMap, size: 9 | 19): { misses: Map<string, number>; max: number } {
+  const misses = new Map<string, number>();
+  let max = 0;
+  for (let r = 1; r <= size; r++) {
+    for (let c = 1; c <= size; c++) {
+      const difficulty: Difficulty = r <= 9 && c <= 9 ? 'standard' : r >= 10 && c >= 10 ? 'expert' : 'advanced';
+      const cell = stats[difficulty][cellKey(difficulty, r, c)];
+      const n = cell ? cell.count - cell.correct : 0;
+      misses.set(`${r}x${c}`, n);
+      max = Math.max(max, n);
+    }
+  }
+  return { misses, max };
 }

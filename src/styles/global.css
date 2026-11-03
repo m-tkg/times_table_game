@@ -1254,6 +1254,11 @@ button.list-row {
 }
 
 /* 九九表（暗記用） */
+/* 文字の大きさ（cqw）を、画面ではなく表の幅に合わせるための基準 */
+.chart-scroll {
+  container-type: inline-size;
+}
+
 .table-grid.chart .head,
 .table-grid.chart .corner,
 .table-grid.chart .cell {
@@ -1270,6 +1275,11 @@ button.list-row {
 
 .table-grid.chart .cell.line {
   background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.table-grid.chart .cell.hot {
+  color: #fff;
 }
 
 .table-grid.chart .cell.selected {
@@ -1337,6 +1347,7 @@ button.list-row {
 .table-grid.chart.big {
   width: 720px;
   max-width: none;
+  margin: 0;
   font-size: 13px;
 }
 
@@ -1363,4 +1374,26 @@ button.list-row {
 
 .table-grid.chart.big .head.on {
   background: color-mix(in srgb, var(--accent) 40%, var(--bg));
+}
+
+.chart-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.chart-legend .legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.chart-legend-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--wrong) 15%, var(--surface)), var(--wrong));
 }
