@@ -20,6 +20,8 @@
   --wrong: #e5484d;
   --shadow-color: #f0d9c4;
   --shadow: 0 4px 0 var(--shadow-color);
+  --head-bg: #e4e7ff;
+  --head-ink: #3b46c4;
   color-scheme: light;
 }
 
@@ -41,6 +43,8 @@
     --correct: #3cc488;
     --wrong: #f06a6e;
     --shadow-color: #0d0f15;
+    --head-bg: #2d3350;
+    --head-ink: #a9b3ff;
     color-scheme: dark;
   }
 }
@@ -62,6 +66,8 @@
   --correct: #3cc488;
   --wrong: #f06a6e;
   --shadow-color: #0d0f15;
+  --head-bg: #2d3350;
+  --head-ink: #a9b3ff;
   color-scheme: dark;
 }
 
@@ -1077,7 +1083,8 @@ button.list-row {
 
 .table-grid .head,
 .table-grid .corner {
-  color: var(--muted);
+  background: var(--head-bg);
+  color: var(--head-ink);
 }
 
 .table-grid .head.on {
